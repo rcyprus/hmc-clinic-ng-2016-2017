@@ -1,4 +1,6 @@
 
+warning('off', 'MATLAB:nargchk:deprecated');
+
 %% Define constants
 p = 4; % p is the number of sensors
 %        How to handle different number of sensors and sensor outputs?
