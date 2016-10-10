@@ -4,7 +4,7 @@ warning('off', 'MATLAB:nargchk:deprecated');
 %% Define constants
 p = 4; % p is the number of sensors
 %        How to handle different number of sensors and sensor outputs?
-n = 6; % n is the number of states
+n = 8; % n is the number of states
 
 %% System parameters
 A = randn(n);
@@ -23,6 +23,5 @@ cvx_begin
 	subject to
 		isreal(x)
 cvx_end
-cvx_status
 
 % http://web.cvxr.com/cvx/doc/funcref.html#funcref <-- see here for "norms" documentation
