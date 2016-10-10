@@ -3,10 +3,16 @@
 warning('off', 'MATLAB:nargchk:deprecated');
 
 %% Define constants
+<<<<<<< HEAD
 % These numbers are all chosen arbitrarily for now
 p = 4; % p is the number of sensors outputs
 n = 6; % n is the number of states
 r = 2; % r is the l_r norm used by the decoder
+=======
+p = 4; % p is the number of sensors
+%        How to handle different number of sensors and sensor outputs?
+n = 8; % n is the number of states
+>>>>>>> 22175dd1b7147fea247a0f2e0eeada59b638de28
 
 %% System parameters
 % Arbitrary random matricies because we don't have the system matrices
