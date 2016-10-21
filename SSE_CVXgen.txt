@@ -1,0 +1,29 @@
+dimensions
+  n = 6 # number of states
+  p = 4 # number of sensors
+  r = 2 # r value for l_r norm, not currently used
+  T = 3 # number of timesteps
+end
+
+parameters # how to pass in actual values to CVXgen?
+  A (n,n)
+  C (p,n)
+  Y (p,T)
+end
+
+variables
+  x[t] (n), t=0..T+1 # or x (n)
+end
+
+minimize
+  # Can we write our own functions?
+  # Can only take 1 norm and infinity norm
+  sum(norm_inf(Y - [C*x C*A*x C*(A^2)*x]))
+end
+
+constraints
+  imag(x) == 0 # how to constrain x to be real?
+end
+
+
+​
