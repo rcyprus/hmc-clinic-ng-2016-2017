@@ -1,0 +1,14 @@
+<package>
+  <description brief="urgwidget_wrapper">
+
+     urgwidget_wrapper
+
+  </description>
+  <author>alexandr</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/urgwidget_wrapper</url>
+
+</package>
+
+

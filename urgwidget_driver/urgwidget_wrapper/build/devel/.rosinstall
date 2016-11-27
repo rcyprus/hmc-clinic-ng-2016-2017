@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /opt/ros/indigo/share/urgwidget_driver/urgwidget_wrapper/build/devel/setup.sh
