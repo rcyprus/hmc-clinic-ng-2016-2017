@@ -22,10 +22,8 @@ Y = [y0 y1 y2]; % Y has a size sensor outputs p by timesteps T
 
 %% Actual algorithm
 cvx_begin
-	variable x(n) % x is a variable with length n (number of states)
-	minimize( sum(norms(Y - [C*x C*A*x C*(A^2)*x], r, 2)) )
-	subject to
-		isreal(x)
+	variable x(n) 
+	minimize( sum(norms(YBu - reshape(CA*x,[p,T]), r, 2)) )
 cvx_end
 
 % http://web.cvxr.com/cvx/doc/funcref.html#funcref
