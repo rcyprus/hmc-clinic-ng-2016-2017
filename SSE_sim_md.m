@@ -10,11 +10,17 @@ ref = zeros(n,1); ref(1) = 1;
 
 % initial state
 x_init = zeros(n,1);
-xhat = 0;
+xhat = zeros(n,1);
 
 % system
+% c=1; M=1; k=1;
+% A=[0 1; -k/M -c/M];
+% B=[0 0; k/M c/M];
+% C=eye(n);
 c=1; M=1;
-A=-c/M; B=1/M; C=1;
+A=-c/M;
+B=1/M;
+C=1;
 
 %% Initialization and initial calculations
 T = Ttotal/Ts; % total timesteps
@@ -25,7 +31,7 @@ U = zeros(m,T);
 X = zeros(n,T); X(:,1) = x_init;
 
 % initialize matrices for SSE calcs
-Bu = zeros(p,T);
+Bu = zeros(p,T+1);
 CA = zeros(p*T,n);
 
 % determine digital state space equations
@@ -35,7 +41,7 @@ Bd = sysd.b;
 Cd = sysd.c;
 
 % control
-K = dlqr(Ad,Bd,1,0.1);
+K = dlqr(Ad,Bd,eye(n),0.1*eye(m));
 Kr = -inv(Cd*inv(Ad-eye(n)-Bd*K)*Bd);
 
 %% Simulation
@@ -57,16 +63,16 @@ for t=0:T-1 % t is the timestep number
     
     % update matrix of control inputs
     for i=0:t
-        Bu(:,t+1) = Bu(:,t+1) + C*(A^(t-i))*B*U(:,i+1);
+        Bu(:,t+2) = Bu(:,t+2) + C*(A^(t-i))*B*U(:,i+1);
     end
     
     % run optimization to find initial state x
-    YBu = Y(:,1:t+1) + Bu(:,1:t+1);
+    YBu = Y(:,1:t+1) - Bu(:,1:t+1);
     CA_t = CA(1:(t+1)*p,:);
     r = 2;
     cvx_begin quiet
         variable x(n)
-        minimize( sum(norms(YBu + reshape(CA_t*x,[p,t+1]), r, 2)) )
+        minimize( sum(norms(YBu - reshape(CA_t*x,[p,t+1]), r, 2)) )
     cvx_end
     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
     
@@ -75,7 +81,6 @@ for t=0:T-1 % t is the timestep number
         x_new = A*x + B*U(:,i+1);
         x = x_new;
     end
-    X(:,t+1) = x_new;
     xhat = x_new;
     
 end
