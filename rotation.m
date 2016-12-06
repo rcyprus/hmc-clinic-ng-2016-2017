@@ -1,5 +1,6 @@
-% Function that computes the rotation matrix for angles
-% Input: set of angles
+% Adapted from http://andrew.gibiansky.com/downloads/pdf/Quadcopter%20Dynamics,%20Simulation,%20a%20Control.pdf
+
+% Compute rotation matrix for a set of angles.
 function R = rotation(angles)
     phi = angles(3);
     theta = angles(2);
@@ -21,4 +22,4 @@ function R = rotation(angles)
         cos(psi) * sin(phi) * sin(theta) - cos(phi) * sin(psi)
         cos(theta) * cos(psi)
     ];
-end 
+end
