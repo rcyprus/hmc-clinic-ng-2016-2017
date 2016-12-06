@@ -1,23 +1,24 @@
 %% Inputs
-Ttotal = 0.2; % total sample time
-Ts = 0.01;    % simulation timestep
+Ttotal = 0.2;  % total sample time
+Ts = 0.01;       % simulation timestep
 p = 1;        % number of sensors
 n = 1;        % number of states
 m = 1;        % number of inputs
 
 % reference signal (desired state)
-ref = zeros(n,1); ref(1) = 1;
+ref = zeros(m,1); ref(1) = 1;
 
 % initial state
 x_init = zeros(n,1);
-xhat = zeros(n,1);
+xhat = x_init;
+y_init = zeros(p,1);
 
 % system
 % c=1; M=1; k=1;
 % A=[0 1; -k/M -c/M];
-% B=[0 0; k/M c/M];
-% C=eye(n);
-c=1; M=1;
+% B=[0 1/M]';
+% C=[1 0];
+% c=1; M=1;
 A=-c/M;
 B=1/M;
 C=1;
@@ -26,13 +27,14 @@ C=1;
 T = Ttotal/Ts; % total timesteps
 
 % initialize matrices to store outputs and inputs
-Y = zeros(p,T);
 U = zeros(m,T);
+Y = zeros(p,T); Y(:,1) = y_init;
 X = zeros(n,T); X(:,1) = x_init;
+Xhat = zeros(n,T); Xhat(:,1) = xhat;
 
 % initialize matrices for SSE calcs
-Bu = zeros(p,T+1);
-CA = zeros(p*T,n);
+Bu = zeros(p,T+1);                            %%%%%%%%%%%%%%%
+CA = zeros(p*T,n); CA(1:p,:) = C;
 
 % determine digital state space equations
 sysd = ss(A,B,C,0,Ts);
@@ -45,16 +47,13 @@ K = dlqr(Ad,Bd,eye(n),0.1*eye(m));
 Kr = -inv(Cd*inv(Ad-eye(n)-Bd*K)*Bd);
 
 %% Simulation
-for t=0:T-1 % t is the timestep number
-    %% Controller
-    U(:,t+1) = Kr*ref - K*xhat;
-    
+for t=1:T-1 % t is the timestep number
     %% Plant
-    u = U(:,t+1); % grab control inputs
-    x = X(:,t+1); % grab state
+    u = U(:,t); % grab control inputs u[t-1]
+    x = X(:,t); % grab state x[t-1]
     [x_new, y] = plant_md(Ad, Bd, Cd, u, x);
-    Y(:,t+2) = y;     % save y output in Y matrix
-    X(:,t+2) = x_new; % save new state x in X matrix
+    Y(:,t+1) = y;     % save y[t] output in Y matrix
+    X(:,t+1) = x_new; % save new state x[t] in X matrix
     
     %% State estimator
     % update observability matrix
@@ -77,19 +76,24 @@ for t=0:T-1 % t is the timestep number
     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
     
     % propagate dynamics to find previous state from initial state
-    for i=0:t
+    for i=0:t-1
         x_new = A*x + B*U(:,i+1);
         x = x_new;
     end
     xhat = x_new;
+    Xhat(:,t+1) = xhat; % save estmimated state xhat[t] in Xhat matrix
+    
+    %% Controller
+    u_new = Kr*ref - K*xhat; % calculate new control inputs
+    U(:,t+1) = u_new; % save new inputs u[t] in U matrix
     
 end
 
 %% Plot results
 figure;
-stem(0:Ts:Ttotal, X,'DisplayName','x')
+stem(0:Ts:Ttotal-Ts, Xhat(1,:),'DisplayName','estimated state x')
 hold on
-stem(0:Ts:Ttotal, Y,'DisplayName','y')
+stem(0:Ts:Ttotal-Ts, Y,'DisplayName','output y/actual state x')
 xlabel('time (s)')
 ylabel('velocity')
 legend('show')
