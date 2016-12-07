@@ -1,25 +1,25 @@
 %% Inputs
 Ttotal = 0.2;  % total sample time
-Ts = 0.01;       % simulation timestep
+Ts = 0.005;       % simulation timestep
 p = 1;        % number of sensors
 n = 1;        % number of states
 m = 1;        % number of inputs
 
 % reference signal (desired state)
-ref = zeros(m,1); ref(1) = 1;
+ref = zeros(m,1); ref(1) = 1; %%%%%%%%%%%%%%%%%%
 
 % initial state
-x_init = zeros(n,1);
+x_init = zeros(n,1); x_init(1) = 0; %%%%%%%%%%%
 xhat = x_init;
-y_init = zeros(p,1);
+y_init = zeros(p,1); y_init(1) = 0; %%%%%%%
 
 % system
 % c=1; M=1; k=1;
 % A=[0 1; -k/M -c/M];
 % B=[0 1/M]';
 % C=[1 0];
-% c=1; M=1;
-A=-c/M;
+b=1; M=1;
+A=-b/M;
 B=1/M;
 C=1;
 
@@ -37,7 +37,8 @@ Bu = zeros(p,T+1);                            %%%%%%%%%%%%%%%
 CA = zeros(p*T,n); CA(1:p,:) = C;
 
 % determine digital state space equations
-sysd = ss(A,B,C,0,Ts);
+sys = ss(A,B,C,0);
+sysd = c2d(sys,Ts);
 Ad = sysd.a;
 Bd = sysd.b;
 Cd = sysd.c;
@@ -84,7 +85,7 @@ for t=1:T-1 % t is the timestep number
     Xhat(:,t+1) = xhat; % save estmimated state xhat[t] in Xhat matrix
     
     %% Controller
-    u_new = Kr*ref - K*xhat; % calculate new control inputs
+    u_new = Kr*ref - K*X(:,t+1); % calculate new control inputs %%%%%%%%
     U(:,t+1) = u_new; % save new inputs u[t] in U matrix
     
 end
