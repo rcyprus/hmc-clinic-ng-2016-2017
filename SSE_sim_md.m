@@ -1,17 +1,17 @@
 %% Inputs
-Ttotal = 0.2;  % total sample time
-Ts = 0.005;       % simulation timestep
+Ttotal = 0.2; % total sample time
+Ts = 0.01;    % simulation timestep
 p = 1;        % number of sensors
 n = 1;        % number of states
 m = 1;        % number of inputs
 
 % reference signal (desired state)
-ref = zeros(m,1); ref(1) = 1; %%%%%%%%%%%%%%%%%%
+ref = zeros(m,1); ref(1) = 1;
 
 % initial state
-x_init = zeros(n,1); x_init(1) = 0; %%%%%%%%%%%
+x_init = zeros(n,1); x_init(1) = randn(1);
 xhat = x_init;
-y_init = zeros(p,1); y_init(1) = 0; %%%%%%%
+y_init = zeros(p,1); y_init(1) = x_init(1);
 
 % system
 % c=1; M=1; k=1;
@@ -28,12 +28,12 @@ T = Ttotal/Ts; % total timesteps
 
 % initialize matrices to store outputs and inputs
 U = zeros(m,T);
-Y = zeros(p,T); Y(:,1) = y_init;
-X = zeros(n,T); X(:,1) = x_init;
+Y = zeros(p,T);    Y(:,1) = y_init;
+X = zeros(n,T);    X(:,1) = x_init;
 Xhat = zeros(n,T); Xhat(:,1) = xhat;
 
 % initialize matrices for SSE calcs
-Bu = zeros(p,T+1);                            %%%%%%%%%%%%%%%
+Bu = zeros(p,T);
 CA = zeros(p*T,n); CA(1:p,:) = C;
 
 % determine digital state space equations
@@ -50,8 +50,8 @@ Kr = -inv(Cd*inv(Ad-eye(n)-Bd*K)*Bd);
 %% Simulation
 for t=1:T-1 % t is the timestep number
     %% Plant
-    u = U(:,t); % grab control inputs u[t-1]
-    x = X(:,t); % grab state x[t-1]
+    u = U(:,t+1); % grab control inputs u[t]
+    x = X(:,t);   % grab state x[t-1]
     [x_new, y] = plant_md(Ad, Bd, Cd, u, x);
     Y(:,t+1) = y;     % save y[t] output in Y matrix
     X(:,t+1) = x_new; % save new state x[t] in X matrix
@@ -59,11 +59,11 @@ for t=1:T-1 % t is the timestep number
     %% State estimator
     % update observability matrix
     index = (t*p + 1);
-    CA(index:index+(p-1),:) = C*(A^t);
+    CA(index:index+(p-1),:) = Cd*(Ad^t);
     
     % update matrix of control inputs
     for i=0:t
-        Bu(:,t+2) = Bu(:,t+2) + C*(A^(t-i))*B*U(:,i+1);
+        Bu(:,t+1) = Bu(:,t+1) + Cd*(Ad^(t-i))*Bd*U(:,i+1); %%%%%%%%%%
     end
     
     % run optimization to find initial state x
@@ -77,7 +77,7 @@ for t=1:T-1 % t is the timestep number
     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
     
     % propagate dynamics to find previous state from initial state
-    for i=0:t-1
+    for i=0:t
         x_new = A*x + B*U(:,i+1);
         x = x_new;
     end
@@ -86,7 +86,7 @@ for t=1:T-1 % t is the timestep number
     
     %% Controller
     u_new = Kr*ref - K*X(:,t+1); % calculate new control inputs %%%%%%%%
-    U(:,t+1) = u_new; % save new inputs u[t] in U matrix
+    U(:,t+2) = u_new; % save new inputs u[t+1] in U matrix
     
 end
 
