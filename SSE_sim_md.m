@@ -1,6 +1,6 @@
 %% Inputs
-Ttotal = 0.2; % total sample time
-Ts = 0.01;    % simulation timestep
+Ttotal = 1; % total sample time
+Ts = 0.05;    % simulation timestep
 p = 1;        % number of sensors
 n = 1;        % number of states
 m = 1;        % number of inputs
@@ -9,7 +9,7 @@ m = 1;        % number of inputs
 ref = zeros(m,1); ref(1) = 1;
 
 % initial state
-x_init = zeros(n,1); x_init(1) = randn(1);
+%x_init = zeros(n,1); %x_init(1) = randn(1);
 xhat = x_init;
 y_init = zeros(p,1); y_init(1) = x_init(1);
 
@@ -18,7 +18,7 @@ y_init = zeros(p,1); y_init(1) = x_init(1);
 % A=[0 1; -k/M -c/M];
 % B=[0 1/M]';
 % C=[1 0];
-b=1; M=1;
+b=5; M=3;
 A=-b/M;
 B=1/M;
 C=1;
@@ -28,9 +28,10 @@ T = Ttotal/Ts; % total timesteps
 
 % initialize matrices to store outputs and inputs
 U = zeros(m,T);
-Y = zeros(p,T);    Y(:,1) = y_init;
-X = zeros(n,T);    X(:,1) = x_init;
-Xhat = zeros(n,T); Xhat(:,1) = xhat;
+Y = zeros(p,T);     Y(:,1) = y_init;
+X = zeros(n,T);     X(:,1) = x_init;
+Xhat = zeros(n,T);  Xhat(:,1) = xhat;
+Xinit = zeros(n,T); Xinit(:,1) = x_init;
 
 % initialize matrices for SSE calcs
 Bu = zeros(p,T);
@@ -63,7 +64,7 @@ for t=1:T-1 % t is the timestep number
     
     % update matrix of control inputs
     for i=0:t
-        Bu(:,t+1) = Bu(:,t+1) + Cd*(Ad^(t-i))*Bd*U(:,i+1); %%%%%%%%%%
+        Bu(:,t+1) = Bu(:,t+1) + Cd*(Ad^(t-i))*Bd*U(:,i+1);
     end
     
     % run optimization to find initial state x
@@ -76,27 +77,31 @@ for t=1:T-1 % t is the timestep number
     cvx_end
     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
     
+    Xinit(:,t+1) = x;
+    
     % propagate dynamics to find previous state from initial state
-    for i=0:t
-        x_new = A*x + B*U(:,i+1);
+    for i=1:t
+        x_new = Ad*x + Bd*U(:,i+1);
         x = x_new;
     end
     xhat = x_new;
     Xhat(:,t+1) = xhat; % save estmimated state xhat[t] in Xhat matrix
     
     %% Controller
-    u_new = Kr*ref - K*X(:,t+1); % calculate new control inputs %%%%%%%%
+    u_new = Kr*ref - K*xhat; %*X(:,t+1); % calculate new control inputs
     U(:,t+2) = u_new; % save new inputs u[t+1] in U matrix
     
 end
 
 %% Plot results
-figure;
+%figure;
+hold on
 stem(0:Ts:Ttotal-Ts, Xhat(1,:),'DisplayName','estimated state x')
 hold on
 stem(0:Ts:Ttotal-Ts, Y,'DisplayName','output y/actual state x')
 xlabel('time (s)')
 ylabel('velocity')
 legend('show')
+%title('propagate 1 to t-1')
 
 
