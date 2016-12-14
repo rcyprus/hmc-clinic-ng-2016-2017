@@ -9,7 +9,7 @@ m = 1;        % number of inputs
 ref = zeros(m,1); ref(1) = 1;
 
 % initial state
-%x_init = zeros(n,1); %x_init(1) = randn(1);
+x_init = zeros(n,1); x_init(1) = randn(1);
 xhat = x_init;
 y_init = zeros(p,1); y_init(1) = x_init(1);
 
@@ -54,7 +54,7 @@ for t=1:T-1 % t is the timestep number
     u = U(:,t+1); % grab control inputs u[t]
     x = X(:,t);   % grab state x[t-1]
     [x_new, y] = plant_md(Ad, Bd, Cd, u, x);
-    Y(:,t+1) = y;     % save y[t] output in Y matrix
+    Y(:,t+1) = y + 0.01*randn(1);     % save y[t] output in Y matrix
     X(:,t+1) = x_new; % save new state x[t] in X matrix
     
     %% State estimator
@@ -94,14 +94,13 @@ for t=1:T-1 % t is the timestep number
 end
 
 %% Plot results
-%figure;
-hold on
+figure;
 stem(0:Ts:Ttotal-Ts, Xhat(1,:),'DisplayName','estimated state x')
 hold on
 stem(0:Ts:Ttotal-Ts, Y,'DisplayName','output y/actual state x')
 xlabel('time (s)')
 ylabel('velocity')
 legend('show')
-%title('propagate 1 to t-1')
+title('y = y + 0.01*randn(1)')
 
 
