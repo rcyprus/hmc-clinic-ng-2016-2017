@@ -27,6 +27,9 @@ constants = struct('m', M, 'L', L, 'k', k, 'b', b, ...
                    'I', I, 'kd', kd, 'g', g, 'dt', Ts);
 clear M L k b I kd g
 
+% control
+c = controller('pid');
+
 %% Initialization and initial calculations
 T = Ttotal/Ts; % total timesteps
 
@@ -85,7 +88,7 @@ for t=1:T-1 % t is the timestep number
     xhat = x_new;
     
     %% Controller
-    u_new = controller(constants); %, xhat(8:10));
+    [u_new, constants] = c(constants, xhat(8:10));
     U(:,t+2) = u_new;
 end
 
