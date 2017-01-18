@@ -28,7 +28,7 @@ constants = struct('m', M, 'L', L, 'k', k, 'b', b, ...
 clear M L k b I kd g
 
 % control
-c = controller('pid');
+c = controller_new('pid');
 
 %% Initialization and initial calculations
 T = Ttotal/Ts; % total timesteps
@@ -43,52 +43,52 @@ Xhat = zeros(n,T); Xhat(:,1) = xhat;
 for t=1:T-1 % t is the timestep number
     %% Plant
     u = U(:,t+1); % grab control inputs
-    x = X(:,t);     % grab state x[t-1]
+    x = X(:,t);   % grab state x[t-1]
     
     [x_new, y] = quadrotor_plant(u, x, constants); % calculate output y
     X(:,t+1) = x_new; % save new state x[t] in X matrix
     Y(:,t+1) = y;     % save outputs in Y matrix
                       %     add 0.5*randn(1) for noisy outputs
     
-    %% State estimator
-    % Linearize state space equations
-    [Ad, Bd, Cd] = linearize_quadrotor(x_new, u, constants);
-    
-    % create observability matrix
-    CA = zeros(p*T,n);
-    for i=0:t
-        index = (i*p + 1);
-        CA(index:index+(p-1),:) = Cd*(Ad^i);
-    end
-    
-    % create matrix of control inputs
-    Bu = zeros(p,T);
-    for j=1:t
-        for i=0:t
-            Bu(:,j+1) = Bu(:,j+1) + Cd*(Ad^(j-i))*Bd*U(:,i+1);
-        end
-    end
-    
-    % run optimization to find initial state x
-    YBu = Y(:,1:t+1) + Bu(:,1:t+1);
-    CA_t = CA(1:(t+1)*p,:);
-    r = 2;
-    cvx_begin quiet
-        variable x(n)
-        minimize( sum(norms(YBu + reshape(CA_t*x,[p,t+1]), r, 2)) )
-    cvx_end
-    fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
-    
-    % propagate dynamics to find previous state from initial state
-    for i=0:t
-        x_new = Ad*x + Bd*U(:,i+1);
-        x = x_new;
-    end
-    X(:,t+1) = x_new;
-    xhat = x_new;
+%     %% State estimator
+%     % Linearize state space equations
+%     [Ad, Bd, Cd] = linearize_quadrotor(x_new, u, constants);
+%     
+%     % create observability matrix
+%     CA = zeros(p*T,n);
+%     for i=0:t
+%         index = (i*p + 1);
+%         CA(index:index+(p-1),:) = Cd*(Ad^i);
+%     end
+%     
+%     % create matrix of control inputs
+%     Bu = zeros(p,T);
+%     for j=1:t
+%         for i=0:t
+%             Bu(:,j+1) = Bu(:,j+1) + Cd*(Ad^(j-i))*Bd*U(:,i+1);
+%         end
+%     end
+%     
+%     % run optimization to find initial state x
+%     YBu = Y(:,1:t+1) + Bu(:,1:t+1);
+%     CA_t = CA(1:(t+1)*p,:);
+%     r = 2;
+%     cvx_begin quiet
+%         variable x(n)
+%         minimize( sum(norms(YBu + reshape(CA_t*x,[p,t+1]), r, 2)) )
+%     cvx_end
+%     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
+%     
+%     % propagate dynamics to find previous state from initial state
+%     for i=0:t
+%         x_new = Ad*x + Bd*U(:,i+1);
+%         x = x_new;
+%     end
+%     X(:,t+1) = x_new;
+     xhat = x_new;
     
     %% Controller
-    [u_new, constants] = c(constants, xhat(8:10));
+    [u_new, constants] = c(constants, ref, xhat);
     U(:,t+2) = u_new;
 end
 
