@@ -12,9 +12,9 @@ function c = controller_new(name, Kd, Kp, Ki)
     end
 
     if strcmpi(name, 'pd')
-        c = @(state, thetadot) pd_controller(state, thetadot, Kd, Kp);
+        c = @(state, ref, x) pd_controller(state, ref, x, Kd, Kp);
     elseif strcmpi(name, 'pid')
-        c = @(state, thetadot) pid_controller(state, thetadot, Kd, Kp, Ki);
+        c = @(state, ref, x) pid_controller(state, ref, x, Kd, Kp, Ki);
     else
         error(sprintf('Unknown controller type "%s"', name));
     end
@@ -26,9 +26,9 @@ function [input, state] = pid_controller(state, ref, x, Kd, Kp, Ki)
     
     % Initialize integrals to zero when it doesn't exist.
     if ~isfield(state, 'integral')
-        state.integral = zeros(3, 1);
-        state.error = zeros(3,1);
-        state.derivative = zeros(3, 1);
+        state.integral = zeros(10, 1);
+        state.error = zeros(10,1);
+        state.derivative = zeros(10, 1);
     end
 
      % Prevent wind-up
