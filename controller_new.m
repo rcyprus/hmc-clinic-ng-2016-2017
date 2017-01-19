@@ -1,6 +1,6 @@
 % Adapted from http://andrew.gibiansky.com/downloads/pdf/Quadcopter%20Dynamics,%20Simulation,%20a%20Control.pdf
 
-% Create a controller based on it's name, using a look-up table.
+% Create a controller based on its name, using a look-up table.
 function c = controller_new(name, Kd, Kp, Ki)
     % Use manually tuned parameters, unless arguments provide the parameters.
     if nargin == 1
@@ -16,11 +16,11 @@ function c = controller_new(name, Kd, Kp, Ki)
     elseif strcmpi(name, 'pid')
         c = @(state, ref, x) pid_controller(state, ref, x, Kd, Kp, Ki);
     else
-        error(sprintf('Unknown controller type "%s"', name));
+        error('Unknown controller type "%s"', name);
     end
 end
 
-% Implement a PID controller. See simulate(controller).
+% Implement a PID controller.
 function [input, state] = pid_controller(state, ref, x, Kd, Kp, Ki)
     error = ref - x;
     
@@ -45,17 +45,18 @@ function [input, state] = pid_controller(state, ref, x, Kd, Kp, Ki)
     input = err2inputs(state, err, total);
 
     % Update controller state.
-    state.derivative = (error - state.error)/state.dt;
+    dt = state.dt;
+    state.derivative = (error - state.error)/dt;
     state.error = error;
-    state.integral = state.integral + state.dt .* error;
+    state.integral = state.integral + dt*error;
 end
 
 % Given desired torques, desired total thrust, and physical parameters,
 % solve for required system inputs.
 function inputs = err2inputs(state, err, total)
-    e1 = err(1);
-    e2 = err(2);
-    e3 = err(3);
+    e1 = err(5); % error in theta
+    e2 = err(6); % error in phi
+    e3 = err(7); % error in psi
     Ix = state.I(1, 1);
     Iy = state.I(2, 2);
     Iz = state.I(3, 3);
