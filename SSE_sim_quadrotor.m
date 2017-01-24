@@ -6,13 +6,16 @@ p = 10;       % number of sensors
 n = 10;       % number of states
 m = 4;        % number of inputs
 
+noise = 0.001;
+
 % reference signal (desired state)
 % ref = zeros(n,1); ref(1) = 1;
-ref = 0.1*randn(n,1); ref(1) = 1;
+ref = noise*randn(n,1); ref(1) = 1;
 
 % initial state
 x_init = zeros(n,1); xhat = x_init;
 y_init = x_init;
+u_init = noise*randn(m,2);
 
 % physical constants
 M = 0.5;   % quadrotor mass (kg)
@@ -34,7 +37,7 @@ c = controller_new('pid');
 T = Ttotal/Ts; % total timesteps
 
 % initialize matrices to store outputs and inputs
-U = zeros(m,T);    U(:,1:2) = 0.1*randn(m,2);
+U = zeros(m,T);    U(:,1:2) = u_init;
 Y = zeros(p,T);    Y(:,1) = y_init;
 X = zeros(n,T);    X(:,1) = x_init;
 Xhat = zeros(n,T); Xhat(:,1) = xhat;
@@ -50,42 +53,42 @@ for t=1:T-1 % t is the timestep number
     Y(:,t+1) = y;     % save outputs in Y matrix
                       %     add 0.5*randn(1) for noisy outputs
     
-%     %% State estimator
-%     % Linearize state space equations
-%     [Ad, Bd, Cd] = linearize_quadrotor(x_new, u, constants);
-%     
-%     % create observability matrix
-%     CA = zeros(p*T,n);
-%     for i=0:t
-%         index = (i*p + 1);
-%         CA(index:index+(p-1),:) = Cd*(Ad^i);
-%     end
-%     
-%     % create matrix of control inputs
-%     Bu = zeros(p,T);
-%     for j=1:t
-%         for i=0:t
-%             Bu(:,j+1) = Bu(:,j+1) + Cd*(Ad^(j-i))*Bd*U(:,i+1);
-%         end
-%     end
-%     
-%     % run optimization to find initial state x
-%     YBu = Y(:,1:t+1) + Bu(:,1:t+1);
-%     CA_t = CA(1:(t+1)*p,:);
-%     r = 2;
-%     cvx_begin quiet
-%         variable x(n)
-%         minimize( sum(norms(YBu + reshape(CA_t*x,[p,t+1]), r, 2)) )
-%     cvx_end
-%     fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
-%     
-%     % propagate dynamics to find previous state from initial state
-%     for i=0:t
-%         x_new = Ad*x + Bd*U(:,i+1);
-%         x = x_new;
-%     end
-%     X(:,t+1) = x_new;
-     xhat = x_new;
+    %% State estimator
+    % Linearize state space equations
+    [Ad, Bd, Cd] = linearize_quadrotor(x_new, u, constants);
+    
+    % create observability matrix
+    CA = zeros(p*T,n);
+    for i=0:t
+        index = (i*p + 1);
+        CA(index:index+(p-1),:) = Cd*(Ad^i);
+    end
+    
+    % create matrix of control inputs
+    Bu = zeros(p,T);
+    for j=1:t
+        for i=0:t
+            Bu(:,j+1) = Bu(:,j+1) + Cd*(Ad^(j-i))*Bd*U(:,i+1);
+        end
+    end
+    
+    % run optimization to find initial state x
+    YBu = Y(:,1:t+1) + Bu(:,1:t+1);
+    CA_t = CA(1:(t+1)*p,:);
+    r = 2;
+    cvx_begin quiet
+        variable x(n)
+        minimize( sum(norms(YBu + reshape(CA_t*x,[p,t+1]), r, 2)) )
+    cvx_end
+    fprintf('For t=%.2f, cvx problem is %s!\n', t*Ts, cvx_status)
+    
+    % propagate dynamics to find previous state from initial state
+    for i=0:t
+        x_new = Ad*x + Bd*U(:,i+1);
+        x = x_new;
+    end
+    X(:,t+1) = x_new;
+    xhat = x_new;
     
     %% Controller
     [u_new, constants] = c(constants, ref, xhat);
