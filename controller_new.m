@@ -24,10 +24,10 @@ end
 function [input, state] = pid_controller(state, ref, x, Kd, Kp, Ki)
     error = ref - x;
     
-    % Initialize integrals to zero when it doesn't exist.
+    % Initialize fields to zero if they don't exist.
     if ~isfield(state, 'integral')
         state.integral = zeros(10, 1);
-        state.error = zeros(10,1);
+        state.error = error;
         state.derivative = zeros(10, 1);
     end
 
@@ -37,11 +37,10 @@ function [input, state] = pid_controller(state, ref, x, Kd, Kp, Ki)
      end
 
     % Compute total thrust.
-    total = state.m * state.g / state.k / ... 
-          (cos(x(5)) * cos(x(6)));
+    total = state.m * state.g / (state.k * cos(x(5)) * cos(x(6)));
 
     % Compute error and inputs.
-    err = Kd*state.derivative + Kp*error + Ki*state.integral; %%%%% - or + ???
+    err = Kd*state.derivative + Kp*error - Ki*state.integral; %%%%% - or + ???
     input = err2inputs(state, err, total);
 
     % Update controller state.
@@ -54,7 +53,7 @@ end
 % Given desired torques, desired total thrust, and physical parameters,
 % solve for required system inputs.
 function inputs = err2inputs(state, err, total)
-    e1 = err(5); % error in theta
+    e1 = err(5); % error in theta?
     e2 = err(6); % error in phi
     e3 = err(7); % error in psi
     Ix = state.I(1, 1);
@@ -70,3 +69,5 @@ function inputs = err2inputs(state, err, total)
     inputs(3) = total/4 -(-2*b*e1*Ix + e3*Iz*k*L)/(4*b*k*L);
     inputs(4) = total/4 + e3*Iz/(4*b) + (e2*Iy)/(2*k*L);
 end
+
+
