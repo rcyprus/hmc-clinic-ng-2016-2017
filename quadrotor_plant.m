@@ -19,7 +19,7 @@ function [x_new, y] = quadrotor_plant(u, state, constants)
     % Compute forces, torques, and accelerations.
     omega = thetadot2omega(thetadot, theta);
     a = acceleration(u, theta, xdot, m, g, k, kd);
-    w_dot = angular_acceleration(u,omega, I, L, b, k);
+    w_dot = angular_acceleration(u, omega, I, L, b, k);
 
     % Advance system state.
     omega = omega + dt*w_dot;
@@ -35,12 +35,12 @@ function [x_new, y] = quadrotor_plant(u, state, constants)
 
 end
 
-% Function tehtadot2omega adapted from Gibiansky 
+% Function thetadot2omega adapted from Gibiansky 
 % Convert derivatives of roll, pitch, yaw to omega.
 function omega = thetadot2omega(thetadot, angles)
     phi = angles(1);
     theta = angles(2);
-    psi = angles(3);
+    %psi = angles(3);
     W = [
         1, 0, -sin(theta)
         0, cos(phi), cos(theta)*sin(phi)
@@ -61,7 +61,6 @@ function a = acceleration(inputs,angles,xdot,m,g,k,kd)
 end
 
 % Adapted from http://andrew.gibiansky.com/downloads/pdf/Quadcopter%20Dynamics,%20Simulation,%20a%20Control.pdf
-
 % Compute rotation matrix for a set of angles.
 function R = rotation(angles)
     phi = angles(3);
@@ -102,7 +101,8 @@ end
 % Torques in the body frame
 % Inputs: current output from each rotor (4 rotors)
 function tau = torques(L,k,b,inputs)
-    tau = [ L*k*(inputs(1) - inputs(3)); L*k*(inputs(2) - inputs(4)); ...
+    tau = [ L*k*(inputs(1) - inputs(3));
+            L*k*(inputs(2) - inputs(4)); ...
             b*(inputs(1) - inputs(2) + inputs(3) - inputs(4))];
             
 end
@@ -112,7 +112,7 @@ end
 function thetadot = omega2thetadot(omega,angles)
     phi = angles(1);
     theta = angles(2);
-    psi = angles(3);
+    %psi = angles(3);
         W = [
         1, 0, -sin(theta)
         0, cos(phi), cos(theta)*sin(phi)
