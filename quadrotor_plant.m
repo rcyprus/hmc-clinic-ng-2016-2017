@@ -9,6 +9,7 @@ function [x_new, y] = quadrotor_plant(u, state, constants)
     kd = constants.kd;
     g = constants.g;
     dt = constants.dt;
+    C = constants.C;
     
     % state variables
     x = state(1);
@@ -30,7 +31,7 @@ function [x_new, y] = quadrotor_plant(u, state, constants)
 
     % Store simulation state for output.
     x_new = [x; xdot; theta; thetadot];
-    y = x_new;
+    y = C*x_new;
     % potentially change this if we need velocity as a state and acceleration as an output
 
 end
