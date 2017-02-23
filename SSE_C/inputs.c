@@ -4,8 +4,8 @@
 
 // Define constants
 int n = 10; // states
-int P = 15; // sensors
-int T = 3; // timesteps
+int P = 38; // sensors
+int T = 100; // timesteps
 int m = 5; // inputs
 
 // TODO: Define system matrices from a text file??!
@@ -65,14 +65,14 @@ void createYBu(double* A, double* B, double* C,
                int T, int P, int n, int m,
                double* Y, double* U, double* YBu) {
   // Initialize temporary arrays
-  double[] u = double[m];
-  double[] CA = double[(P*T)*n];
-  double[] Bu = double[n];
-  double[] CABu = double[P*T];
+  double u[m];
+  double CA[(P*T)*n];
+  double Bu[n];
+  double CABu[P*T];
 
   // Set all elements of CA to zero initially
   for (size_t i = 0; i < P*T; ++i) {
-    CA[i] = 0;
+    CABu[i] = 0;
   }
   
   // Loop through timesteps
@@ -88,7 +88,7 @@ void createYBu(double* A, double* B, double* C,
       multiply(C, P, n, AT, n, n, CA);
       multiply(B, n, m, u, m, 1, Bu);
       multiply(CA, P, n, Bu, n, 1, CABu);
-      add(Y, -YBu, P*T, YBu);
+      add(Y, -CABu, P*T, YBu);
     }
   }
 }
@@ -98,7 +98,7 @@ void createYBu(double* A, double* B, double* C,
  */
 void power(double* A, int len, int T, double* AT) {
   // Initialize output matrix
-  double* AT = double[len*len];
+  double AT[len*len];
   
   // If T is zero we don't need to multiply anything
   if (T == 0) {
@@ -120,18 +120,17 @@ void multiply(double* A, int rowsA, int colsA,
               double* AB) {
   // Throw an exception if the matrix sizes are not compatible
   if (colsA != rows B) {
-    // TODO: throw an exception
+    // TODO
   }
 
   // Initialize the output matrix to be the correct size and fill it with zeros
-  double* AB = double[rowsA*colsB];
   for (size_t i = 0; i < rowsA*colsB; ++i) {
     AB[i] = 0;
   }
 
   // Define temporary arrays
-  double[] tmprowA = double[colsA];
-  double[] tmpcolB = double[rowsB];
+  double tmprowA[colsA];
+  double tmpcolB[rowsB];
   
   for (size_t c = 0; c < colsB; ++c) { // 4 times
     for (size_t r = 0; r < rowsA; ++r) { // 3 times
