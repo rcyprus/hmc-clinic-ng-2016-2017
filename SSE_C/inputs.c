@@ -38,8 +38,12 @@ void createI(int T, int P, double* I) {
  */
 void createCA(int T, int P, int n, double* A, double* C, double* CA) {
   // Initialize intermediate array and output array
-  double tmpCA = double[P*n];
-  double* CA = double[(P*T)*n];
+  double[] tmpCA = double[P*n];
+
+  // Set all elements of CA to zero initially
+  for (size_t i = 0; i < P*T*n; ++i) {
+    CA[i] = 0;
+  }
   
   // Loop through each timestep
   for (size_t t = 0; t < T; ++t) {
@@ -66,6 +70,11 @@ void createYBu(double* A, double* B, double* C,
   double[] Bu = double[n];
   double[] CABu = double[P*T];
 
+  // Set all elements of CA to zero initially
+  for (size_t i = 0; i < P*T; ++i) {
+    CA[i] = 0;
+  }
+  
   // Loop through timesteps
   for (size_t t = 0; t < T; ++t) {
     for (size_t i = 1; i < T; ++i) {
