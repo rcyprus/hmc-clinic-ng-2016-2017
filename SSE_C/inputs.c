@@ -3,29 +3,31 @@
 #include "inputs.h"
 
 // Define constants
-int n = 10; // states
-int P = 38; // sensors
-int T = 100; // timesteps
-int m = 5; // inputs
+const int n = 10; // states
+const int P = 38; // sensors
+const int T = 100; // timesteps
+const int m = 5; // inputs
 
-// TODO: Define system matrices from a text file??!
+// Constant Matrices
+// // TODO: Define system matrices from a text file??!
+int A[n*n]; // nxn
+int B[n*m]; // nxm
+int C[P*n]; // Pxn
+
+// Constant (but need to populate)
+int I[P+1][T*T*P] = {0}; // P+1 b/c CVXGEN may use only the latter 5 rows ...
+
+
+int CA[P*T*n]; // PTxn , might need to grow as we go
+int YBu[]; // PTx1
+
 
 /* 
- * Creates a T x PT matrix for with the indexed variable p
+ * Setup a P, TxPT matrices for with the indexed variable p
  */
-void createI(int T, int P, double* I) {
+void setupI(void) {
   // Loop through each indexed variable
   for (size_t p = 0; p < P; ++p) {
-    
-    // Loop through rows
-    for (size_t i = 0; i < T; ++i) {
-      // Loop through columns
-      for (size_t j = 0; j < P*T; ++j) {
-        // Populate the matrix with zeros
-        I[p+1][i + j*T] = 0;
-      }
-    }
-    
     // Put ones where we want them
     for (size_t t = 0; t < T; ++t) {
       I[p+1][p + t*(P+P*T)] = 1;
@@ -35,27 +37,25 @@ void createI(int T, int P, double* I) {
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
+ * Updates the specified "section" of CA matrix
  */
-void createCA(int T, int P, int n, double* A, double* C, double* CA) {
+void updateCA(int timeStep) {
   // Initialize intermediate array and output array
-  double[] tmpCA = double[P*n];
-
-  // Set all elements of CA to zero initially
-  for (size_t i = 0; i < P*T*n; ++i) {
-    CA[i] = 0;
-  }
+  double tmpCA[P*n];
   
+  double AT[n*n];
+
   // Loop through each timestep
-  for (size_t t = 0; t < T; ++t) {
+  // for (size_t t = 0; t < T; ++t) {
     // Compute C*(A^T)
-    power(A, n, T, AT);
+    power(A, n, timeStep, AT);
     multiply(C, P, n, AT, n, n, tmpCA);
 
     // Copy tmpCA into full CA matrix
     for (size_t i = 0; i < P*n; ++i) {
-      CA[(P*n)*t+i] = tmpCA[i];
+      CA[(P*n)*timeStep+i] = tmpCA[i];
     }
-  }
+  // }
 }
 
 /* 
@@ -95,55 +95,58 @@ void createYBu(double* A, double* B, double* C,
 
 /* 
  * Raises the square matrix A with a size len x len to the power of T
+ * (Currently only applied to global matrix A)
  */
-void power(double* A, int len, int T, double* AT) {
+//void power(double A, int len, int T, double* AT) {
+void power(int t, double* AT) {
   // Initialize output matrix
-  double AT[len*len];
+  //double temp[n*n];
   
   // If T is zero we don't need to multiply anything
-  if (T == 0) {
+  if (t == 0) {
     AT = A;
   }
   else {
     // Loop through the number of powers desired
-    for (size_t i = 0; i < T, ++i) {
-      multiply(A, len, len, A, len, len, AT);
+    for (size_t i = 1; i < t, ++i) {
+      multiply(A, n, n, AT, n, n, AT);
     }
   }
 }
 
 /* 
- * Multiplies together matrices A and B (sizes must be compatible)
+ * Multiplies together matrices X and Y (sizes must be compatible), saves it into input XY
  */
-void multiply(double* A, int rowsA, int colsA,
-              double* B, int rowsB, int colsB,
-              double* AB) {
+void multiply(double* X, int rowsX, int colsX,
+              double* Y, int rowsY, int colsY,
+              double* XY ) {
   // Throw an exception if the matrix sizes are not compatible
-  if (colsA != rows B) {
+  if (colsX != rowsY) {
     // TODO
+    printf("ERROR: Matrix dimensions must match");
   }
 
   // Initialize the output matrix to be the correct size and fill it with zeros
-  for (size_t i = 0; i < rowsA*colsB; ++i) {
-    AB[i] = 0;
+  for (size_t i = 0; i < rowsX*colsY; ++i) {
+    XY[i] = 0;
   }
 
   // Define temporary arrays
-  double tmprowA[colsA];
-  double tmpcolB[rowsB];
+  double tmprowX[colsX];
+  double tmpcolY[rowsY];
   
-  for (size_t c = 0; c < colsB; ++c) { // 4 times
-    for (size_t r = 0; r < rowsA; ++r) { // 3 times
+  for (size_t r = 0; r < rowsX; ++r) { // 3 times
+    for (size_t c = 0; c < colsY; ++c) { // 4 times
       // Fill temporary arrays
-      for (size_t i = 0; i < colsA; ++i) {
-        tmprowA[i] = A[(r*rowsA)+i];
+      for (size_t i = 0; i < colsX; ++i) {
+        tmprowX[i] = X[(r*colsX)+i];
       }
-      for (size_t i = 0; i < rowsB; ++i) {
-        tmprowB[i] = B[c+(i*colsB)];
+      for (size_t i = 0; i < rowsY; ++i) {
+        tmprowY[i] = Y[c+(i*rowsY)];
       }
       
       // Save dot product in output array
-      AB[c + r*colsB] = dot(tmprowA, tmpcolB, colsA);
+      XY[c + r*colsY] = dot(tmprowX, tmpcolY, colsX);
     }
   }
 }
@@ -174,4 +177,18 @@ void add(double* x, double* y, int len, double* xplusy) {
   }
 }
 
+/*
+ * Debugging print function (only 2D arrays)
+ */
+void printArray(double* array, int rows, int cols){
+  // Loop down rows
+  for(int i = 0; i < rows; ++i){
+    // Loop across row
+    for(int j = 0; j < cols; ++j){
+      printf('%d ', array[i*rows + j]);
+    }
+    // Print enter
+    printf('\n');
+  }
+}
 
