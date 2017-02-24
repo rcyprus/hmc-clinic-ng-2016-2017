@@ -10,16 +10,16 @@ const int m = 5; // inputs
 
 // Constant Matrices
 // // TODO: Define system matrices from a text file??!
-int A[n*n]; // nxn
-int B[n*m]; // nxm
-int C[P*n]; // Pxn
+const int A[n*n]; // nxn
+const int B[n*m]; // nxm
+const int C[P*n]; // Pxn
 
 // Constant (but need to populate)
 int I[P+1][T*T*P] = {0}; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 
-
-int CA[P*T*n]; // PTxn , might need to grow as we go
-int YBu[]; // PTx1
+// Update contents after each timeStep
+int CA[P*T*n]; // PTxn
+int YBu[P*T]; // PTx1
 
 
 /* 
@@ -37,59 +37,57 @@ void setupI(void) {
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
- * Updates the specified "section" of CA matrix
+ * Updates the specified "section" of CA matrix (global)
  */
 void updateCA(int timeStep) {
   // Initialize intermediate array and output array
   double tmpCA[P*n];
-  
   double AT[n*n];
 
-  // Loop through each timestep
-  // for (size_t t = 0; t < T; ++t) {
-    // Compute C*(A^T)
-    power(A, n, timeStep, AT);
-    multiply(C, P, n, AT, n, n, tmpCA);
+  // Compute C*(A^T)
+  power(A, n, timeStep, AT);
+  multiply(C, P, n, AT, n, n, tmpCA);
 
-    // Copy tmpCA into full CA matrix
-    for (size_t i = 0; i < P*n; ++i) {
-      CA[(P*n)*timeStep+i] = tmpCA[i];
-    }
-  // }
+  // Copy tmpCA into full CA matrix
+  for (size_t i = 0; i < P*n; ++i) {
+    CA[(P*n)*timeStep+i] = tmpCA[i];
+  }
 }
 
 /* 
  * Creates a PT x 1 matrix of sensor measurements and propagated inputs
+ * Inputs: timeStep: only updating at a given timeStep
+ *         y: sensor outputs at current timeStep (Px1)
+ *         U: control inputs (all time) (mTx1)
+ * Output: YBu (global matrix) (PTx1)
  */
-void createYBu(double* A, double* B, double* C,
-               int T, int P, int n, int m,
-               double* Y, double* U, double* YBu) {
+void updateYBu(int timeStep, double* y, double* U, double* YBu) {
   // Initialize temporary arrays
-  double u[m];
-  double CA[(P*T)*n];
+  double tmpCA[P*n];
+  double u[m]; 
   double Bu[n];
   double CABu[P*T];
-
-  // Set all elements of CA to zero initially
-  for (size_t i = 0; i < P*T; ++i) {
-    CABu[i] = 0;
-  }
+  double AT[n*n];
+  double tmpYBu[P];
   
-  // Loop through timesteps
-  for (size_t t = 0; t < T; ++t) {
-    for (size_t i = 1; i < T; ++i) {
-      // Grab necessary section of U
-      for (size_t j = 0; j < m; ++j) {
-        u[j] = U[(i*m)+j];
-      }
-      
-      // Perform calculations
-      power(A, n, t-i, AT);
-      multiply(C, P, n, AT, n, n, CA);
-      multiply(B, n, m, u, m, 1, Bu);
-      multiply(CA, P, n, Bu, n, 1, CABu);
-      add(Y, -CABu, P*T, YBu);
+  // Sums previous inputs up through current timeStep
+  for (size_t i = 1; i < timeStep; ++i) {
+    // Grab necessary section of U
+    for (size_t j = 0; j < m; ++j) {
+      u[j] = U[ ((i-1)*m) + j];
     }
+    
+    // Perform calculations
+    power(A, n, timeStep-i, AT);
+    multiply(C, P, n, AT, n, n, tmpCA);
+    multiply(B, n, m, u, m, 1, Bu);
+    multiply(CA, P, n, Bu, n, 1, CABu);
+    add(y, -CABu, P*T, tmpYBu);
+  }
+
+  // Copy tmpYBu into full YBu matrix
+  for (size_t i = 0; i < P; ++i) {
+    YBu[P*timeStep+i] = tmpYBu[i];
   }
 }
 
@@ -97,7 +95,6 @@ void createYBu(double* A, double* B, double* C,
  * Raises the square matrix A with a size len x len to the power of T
  * (Currently only applied to global matrix A)
  */
-//void power(double A, int len, int T, double* AT) {
 void power(int t, double* AT) {
   // Initialize output matrix
   //double temp[n*n];
@@ -177,6 +174,7 @@ void add(double* x, double* y, int len, double* xplusy) {
   }
 }
 
+
 /*
  * Debugging print function (only 2D arrays)
  */
@@ -185,10 +183,37 @@ void printArray(double* array, int rows, int cols){
   for(int i = 0; i < rows; ++i){
     // Loop across row
     for(int j = 0; j < cols; ++j){
-      printf('%d ', array[i*rows + j]);
+      printf('%d ', array[i*cols + j]);
     }
     // Print enter
     printf('\n');
   }
 }
+
+/*
+ * Read in 1D array from file (w/ comma delimiter) 
+ */
+void readArrayFromFile(const char* file_name, double* array){
+  FILE* file = fopen (file_name, 'r');
+  int i = 0;
+  int index = 0 
+
+  fscanf (file, "%d", &i); 
+  while (!feof (file))
+    {  
+      array[index] = i;
+      index++; 
+      // printf ("%d ", i);
+      fscanf (file, "%d,", &i);
+    }
+  fclose (file);        
+}
+
+// Matlab
+/*
+  A = rand(N); //square matrix
+  A = reshape(A',[1,N*N]);
+  dlmwrite('filename.txt',A);
+
+*/
 
