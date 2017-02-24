@@ -1,7 +1,8 @@
 // inputs.h
 // Contains helper functions to create necessary inputs to quadrotor SSE
 
-#include "inputs.h"
+#ifndef INPUTS_H_INCLUDED
+#define INPUTS_H_INCLUDED 1
 
 /* 
  * Creates a T x PT matrix for with the indexed variable p
@@ -46,6 +47,8 @@ double dot(double* x, double* y, int len);
  */
 void add(double* x, double* y, int len, double* xplusy);
 
+void sub(double* x, double* y, int len, double* xminy); 
+
 /*
  * Debugging print function (only 2D arrays)
  */
@@ -56,4 +59,6 @@ void printArray(double* array, int rows, int cols);
  */
 void readArrayFromFile(const char* file_name, double* array);
 
+
+#endif
 
