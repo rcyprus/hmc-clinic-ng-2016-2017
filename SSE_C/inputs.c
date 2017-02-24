@@ -206,10 +206,14 @@ void printArray(double* array, int rows, int cols){
  */
 void readArrayFromFile(const char* file_name, double* array){
   FILE* file = fopen (file_name, "r");
+  printf("break 1");
   double i = 0;
   int index = 0;
 
-  fscanf (file, "%lf", &i); 
+  fscanf (file, "%lf,", &i); 
+  
+  printf("break 2");
+  
   while (!feof (file))
     {  
       array[index] = i;
@@ -227,8 +231,40 @@ void readArrayFromFile(const char* file_name, double* array){
   dlmwrite('filename.txt',A);
 
 */
+void simpleFile(void)
+{
+    FILE* f = fopen("test.txt", "r");
+    int k = 0;
+    int i = 0;
+    int numbers[10]; // assuming there are only 5 numbers in the file
+
+    while( fscanf(f, "%d,", &k) > 0 ) // parse %d followed by ','
+    {
+        numbers[i++] = k;
+    }
+
+    for(int j = 0; j < 10; j++){
+      printf("%d, ",numbers[j]);
+    }
+    printf("\n");
+
+    fclose(f);
+}
 
 int main(void){
   printf("compiled\n");
+  printf("try load file\n");
+  // // Initialize test array
+  double test[10];
+
+  simpleFile();
+
+  // printf("try load file");
+  // // Fill Test array with text file
+  // readArrayFromFile("Test10.txt", test);
+  // printf("Loaded File");
+  // // Print the filled array
+  // printArray(test,5,2);
+
   return 0;
 }
