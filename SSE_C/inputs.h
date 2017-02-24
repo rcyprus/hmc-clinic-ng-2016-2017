@@ -6,31 +6,35 @@
 /* 
  * Creates a T x PT matrix for with the indexed variable p
  */
-void createI(int T, int P, double* I);
+void setupI(void);
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
+ * Updates the specified "section" of CA matrix (global)
  */
-void createCA(int T, int P, int n, double* A, double* C, double* CA);
+void updateCA(int timeStep);
 
 /* 
  * Creates a PT x 1 matrix of sensor measurements and propagated inputs
+ * Inputs: timeStep: only updating at a given timeStep
+ *         y: sensor outputs at current timeStep (Px1)
+ *         U: control inputs (all time) (mTx1)
+ * Output: YBu (global matrix) (PTx1)
  */
-void createYBu(double* A, double* B, double* C,
-               int T, int P, int n, int m,
-               double* Y, double* U, double* YBu);
+void updateYBu(int timeStep, double* y, double* U, double* YBu);
 
 /* 
  * Raises the square matrix A with a size len x len to the power of T
+ * (Currently only applied to global matrix A)
  */
-void power(double* A, int len, int T, double* AT);
+void power(int T, double* AT);
 
 /* 
  * Multiplies together matrices A and B (sizes must be compatible)
  */
-void multiply(double* A, int rowsA, int colsA,
-              double* B, int rowsB, int colsB,
-              double* AB);
+void multiply(double* X, int rowsX, int colsX,
+              double* Y, int rowsY, int colsY,
+              double* XY);
 
 /* 
  * Takes the dot product of vectors x and y (vectors must have length len)
@@ -41,5 +45,15 @@ double dot(double* x, double* y, int len);
  * Adds vectors x and y together (both vectors must of of length len)
  */
 void add(double* x, double* y, int len, double* xplusy);
+
+/*
+ * Debugging print function (only 2D arrays)
+ */
+void printArray(double* array, int rows, int cols);
+
+/*
+ * Read in 1D array from file (w/ comma delimiter) 
+ */
+void readArrayFromFile(const char* file_name, double* array);
 
 
