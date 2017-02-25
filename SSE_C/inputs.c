@@ -10,7 +10,7 @@
 // const int m = 5; // inputs
 #define n 10
 #define P 38
-#define T 100
+#define T 4
 #define m 5
 
 // Constant Matrices
@@ -20,7 +20,7 @@ const double B[n*m]; // nxm
 const double C[P*n]; // Pxn
 
 // Constant (but need to populate)
-double I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
+int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 
 // Update contents after each timeStep
 double CA[P*T*n]; // PTxn
@@ -117,7 +117,8 @@ void power(int t, double* AT) {
 }
 
 /* 
- * Multiplies together matrices X and Y (sizes must be compatible), saves it into input XY
+ * Multiplies together matrices X and Y (sizes must be compatible)
+ * and saves it into input XY
  */
 void multiply(double* X, int rowsX, int colsX,
               double* Y, int rowsY, int colsY,
@@ -128,7 +129,7 @@ void multiply(double* X, int rowsX, int colsX,
     printf("ERROR: Matrix dimensions must match");
   }
 
-  // Initialize the output matrix to be the correct size and fill it with zeros
+  // Initialize an output matrix of the correct size and fill with zeros
   for (int i = 0; i < rowsX*colsY; ++i) {
     XY[i] = 0;
   }
@@ -196,6 +197,22 @@ void printArray(double* array, int rows, int cols){
     // Loop across row
     for(int j = 0; j < cols; ++j){
       printf("%lf ", array[i*cols + j]);
+    }
+    // Print enter
+    printf("\n");
+  }
+}
+
+/*
+ * Debugging print function (only 2D int arrays)
+ */
+void printArrayInt(int* array, int rows, int cols){
+  // Loop down rows
+  for(int i = 0; i < rows; ++i){
+    printf("  ");
+    // Loop across row
+    for(int j = 0; j < cols; ++j){
+      printf("%d ", array[i*cols + j]);
     }
     // Print enter
     printf("\n");
@@ -273,6 +290,12 @@ int main(void){
   multiply(test,5,5, test,5,5, testMultiply);
   printf("Test muliply: \n");
   printArray(testMultiply, 5,5);
+
+  setupI();
+  printf("Test I[1] matrix:\n");
+  printArrayInt(I[1], T, T*P);
+  printf("Test I[5] matrix:\n");
+  printArrayInt(I[5], T, T*P);
 
   return 0;
 }
