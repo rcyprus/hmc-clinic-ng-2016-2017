@@ -20,7 +20,7 @@ const double B[n*m]; // nxm
 const double C[P*n]; // Pxn
 
 // Constant (but need to populate)
-double I[P+1][T*T*P] = {0}; // P+1 b/c CVXGEN may use only the latter 5 rows ...
+double I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 
 // Update contents after each timeStep
 double CA[P*T*n]; // PTxn
@@ -192,6 +192,7 @@ void sub(double* x, double* y, int len, double* xminy) {
 void printArray(double* array, int rows, int cols){
   // Loop down rows
   for(int i = 0; i < rows; ++i){
+    printf("  ");
     // Loop across row
     for(int j = 0; j < cols; ++j){
       printf("%lf ", array[i*cols + j]);
@@ -206,21 +207,22 @@ void printArray(double* array, int rows, int cols){
  */
 void readArrayFromFile(const char* file_name, double* array){
   FILE* file = fopen (file_name, "r");
-  printf("break 1");
+  // printf("break 1");
   double i = 0;
   int index = 0;
-
+  printf("Scanning file: %s\n", file_name);
   fscanf (file, "%lf,", &i); 
   
-  printf("break 2");
+  // printf("break 2");
   
   while (!feof (file))
-    {  
+  {  
       array[index] = i;
       index++; 
       // printf ("%d ", i);
       fscanf (file, "%lf,", &i);
-    }
+  }
+  array[index] = i;
   fclose (file);        
 }
 
@@ -251,20 +253,26 @@ void simpleFile(void)
     fclose(f);
 }
 
+
 int main(void){
   printf("compiled\n");
-  printf("try load file\n");
+  // printf("try load file\n");
   // // Initialize test array
-  double test[10];
+  double test[25];
 
-  simpleFile();
+  // Fill Test array with text file
+  readArrayFromFile("test.txt", test);
 
-  // printf("try load file");
-  // // Fill Test array with text file
-  // readArrayFromFile("Test10.txt", test);
-  // printf("Loaded File");
-  // // Print the filled array
-  // printArray(test,5,2);
+  // Print the filled array
+  printArray(test,5,5);
+
+  double testDot = dot(test,test,25);
+  printf("Test dot: %lf\n",testDot);
+
+  double testMultiply[25];
+  multiply(test,5,5, test,5,5, testMultiply);
+  printf("Test muliply: \n");
+  printArray(testMultiply, 5,5);
 
   return 0;
 }

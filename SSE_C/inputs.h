@@ -65,5 +65,6 @@ void readArrayFromFile(const char* file_name, double* array);
 void simpleFile(void);
 
 
+
 #endif
 
