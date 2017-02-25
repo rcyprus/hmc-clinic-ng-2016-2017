@@ -15,9 +15,9 @@
 
 // Constant Matrices
 // // TODO: Define system matrices from a text file??!
-const double A[n*n]; // nxn
-const double B[n*m]; // nxm
-const double C[P*n]; // Pxn
+double A[n*n]; // nxn
+double B[n*m]; // nxm
+double C[P*n]; // Pxn
 
 // Constant (but need to populate)
 int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
@@ -25,7 +25,6 @@ int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 // Update contents after each timeStep
 double CA[P*T*n]; // PTxn
 double YBu[P*T]; // PTx1
-
 
 /* 
  * Setup a P, TxPT matrices for with the indexed variable p
@@ -97,21 +96,35 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
 }
 
 /* 
- * Raises the square matrix A with a size len x len to the power of T
+ * Raises the square matrix A with a size len x len to the power of t
  * (Currently only applied to global matrix A)
  */
 void power(int t, double* AT) {
-  // Initialize output matrix
-  //double temp[n*n];
+  // Create temporary matrix
+  double tmpAT[n*n];
+
+  // Fill the output AT matrix with zeros
+  for (size_t i = 0; i < n*n; ++i) {
+    AT[i] = 0;
+  }
   
-  // If T is zero we don't need to multiply anything
+  // Make AT the identity matrix
+  for (size_t i = 0; i < n; ++i) {
+    AT[i*(n+1)] = 1;
+  }
+  
+  // If t is zero we want to return the identity without doing multiplication
   if (t == 0) {
-    AT = A;
+    return;
   }
   else {
     // Loop through the number of powers desired
-    for (int i = 1; i < t; ++i) {
-      multiply(A, n, n, AT, n, n, AT);
+    for (size_t i = 0; i < t; ++i) {
+      multiply(A, n, n, AT, n, n, tmpAT);
+      // Copy tmpAT into AT
+      for (size_t j=0; j < n*n; ++j) {
+        AT[j] = tmpAT[j];
+      }
     }
   }
 }
@@ -274,28 +287,49 @@ void simpleFile(void)
 int main(void){
   printf("compiled\n");
   // printf("try load file\n");
-  // // Initialize test array
+  // Initialize test array
   double test[25];
-
-  // Fill Test array with text file
+  
+  // Fill Test array with text file and print
   readArrayFromFile("test.txt", test);
-
-  // Print the filled array
   printArray(test,5,5);
-
+  
+  // Test dot product
   double testDot = dot(test,test,25);
   printf("Test dot: %lf\n",testDot);
-
+  
+  // Test multiply
   double testMultiply[25];
   multiply(test,5,5, test,5,5, testMultiply);
   printf("Test muliply: \n");
   printArray(testMultiply, 5,5);
-
+  
+  // Test I matrix
   setupI();
   printf("Test I[1] matrix:\n");
   printArrayInt(I[1], T, T*P);
   printf("Test I[5] matrix:\n");
   printArrayInt(I[5], T, T*P);
+  
+  // Load A, B, and C matrices
+  readArrayFromFile("Amatrix.txt", A);
+  readArrayFromFile("Bmatrix.txt", B);
+  readArrayFromFile("Cmatrix.txt", C);
 
+  // Test CA matrix
+  //updateCA(T);
+  //printArray(CA, P*T, n);
+  
+  // Test power
+  double AT[n*n];
+  power(0, AT); // raise A to the zero power, should output the identity
+  printArray(AT,n,n);
+  printf("\n");
+  power(1, AT); // raise A to the first power, should output A
+  printArray(AT,n,n);
+  printf("\n");
+  power(2, AT); // raise A to the second power, should output A^2
+  printArray(AT,n,n);
+  
   return 0;
 }

@@ -28,7 +28,7 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu);
  * Raises the square matrix A with a size len x len to the power of T
  * (Currently only applied to global matrix A)
  */
-void power(int T, double* AT);
+void power(int t, double* AT);
 
 /* 
  * Multiplies together matrices A and B (sizes must be compatible)
