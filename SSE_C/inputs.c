@@ -68,11 +68,11 @@ void updateCA(int timeStep) {
 void updateYBu(int timeStep, double* y, double* U, double* YBu) {
   // Initialize temporary arrays
   double tmpYBu[P];
+  double AT[n*n];
   double CA[P*n];
   double u[m]; 
   double Bu[n];
   double CABu[P*T];
-  double AT[n*n];
   
   // at timestep zero no inputs are necessary
   if (timeStep == 0) {
@@ -82,18 +82,24 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
   }
   
   // Sums previous inputs up through current timeStep
-  for (size_t i = 1; i <= timeStep; ++i) {
+  for (size_t i = 0; i < timeStep; ++i) {
     // Grab necessary section of U
     for (size_t j = 0; j < m; ++j) {
-      u[j] = U[ (i-1)*m + j];
+      u[j] = U[ i*m + j];
     }
-    
+    printArrayDouble(u,1,m);
+
     // Perform calculations
-    power(timeStep-i, AT);
+    power((timeStep-1)-i, AT);
+    printArrayDouble(AT,n,n);
     multiply(C,  P, n, AT, n, n, CA);
+    printArrayDouble(CA,P,n);
     multiply(B,  n, m, u,  m, 1, Bu);
+    printArrayDouble(Bu,n,1);
     multiply(CA, P, n, Bu, n, 1, CABu);
+    printArrayDouble(CABu,P,1);
     sub(y, CABu, P, tmpYBu);
+    printArrayDouble(tmpYBu,P,1);
   }
 
   // Copy tmpYBu into full YBu matrix
@@ -244,6 +250,7 @@ void printArrayDouble(double* array, int rows, int cols){
     // Print enter
     printf("\n");
   }
+  printf("\n");
 }
 
 /*
@@ -260,6 +267,7 @@ void printArrayInt(int* array, int rows, int cols){
     // Print enter
     printf("\n");
   }
+  printf("\n");
 }
 
 /*
@@ -370,14 +378,16 @@ int main(void){
   double y1[P];
   double y2[P];
   double y3[P];
-  double U[m*P];
-  readArrayFromFile("y0new.txt",y0);
+  double U[m*T];
+  readArrayFromFile("y0.txt",y0);
   readArrayFromFile("y1.txt",y1);
   readArrayFromFile("y2.txt",y2);
   readArrayFromFile("y3.txt",y3);
   readArrayFromFile("Uvector.txt",U);
 
   // Test YBu matrix
+  printf("\n");
+  printArrayDouble(U,T,m);
   printf("\n");
   printArrayDouble(y0, P, 1);
   //printf("\n");
@@ -386,13 +396,12 @@ int main(void){
   //printArrayDouble(y2, P, 1);
   printf("\n");
   //printArrayDouble(y3, P, 1);
-  updateYBu(0,y0,U,YBu);
-  //updateYBu(1,y1,U,YBu);
+  //updateYBu(0,y0,U,YBu);
+  updateYBu(1,y1,U,YBu);
   printf("\n");
   printArrayDouble(YBu,P*T,1);
   //updateYBu(2,y2,U,YBu);
   //updateYBu(3,y3,U,YBu);
-  //printArrayDouble(YBu,P*T,1);
 
   return 0;
 }
