@@ -322,7 +322,7 @@ int main(void){
   
   // Fill Test array with text file and print
   readArrayFromFile("test.txt", test);
-  printArray(test,5,5);
+  printArrayDouble(test,5,5);
   
   // Test dot product
   double testDot = dot(test,test,25);
@@ -332,7 +332,7 @@ int main(void){
   double testMultiply[25];
   multiply(test,5,5, test,5,5, testMultiply);
   printf("Test muliply: \n");
-  printArray(testMultiply, 5,5);
+  printArrayDouble(testMultiply, 5,5);
   
   // Test I matrix
   setupI();
@@ -349,13 +349,13 @@ int main(void){
   // Test power
   double AT[n*n];
   power(0, AT); // raise A to the zero power, should output the identity
-  //printArray(AT,n,n);
+  //printArrayDouble(AT,n,n);
   printf("\n");
   power(1, AT); // raise A to the first power, should output A
-  //printArray(AT,n,n);
+  //printArrayDouble(AT,n,n);
   printf("\n");
   power(2, AT); // raise A to the second power, should output A^2
-  //printArray(AT,n,n);
+  //printArrayDouble(AT,n,n);
   
   // Test CA matrix
   printf("\n");
@@ -363,7 +363,7 @@ int main(void){
   updateCA(1);
   updateCA(2);
   updateCA(3);
-  //printArray(CA, P*T, n);
+  //printArrayDouble(CA, P*T, n);
   
   // load inputs
   double y0[P];
@@ -379,20 +379,20 @@ int main(void){
 
   // Test YBu matrix
   printf("\n");
-  printArray(y0, P, 1);
+  printArrayDouble(y0, P, 1);
   //printf("\n");
-  //printArray(y1, P, 1);
+  //printArrayDouble(y1, P, 1);
   //printf("\n");
-  //printArray(y2, P, 1);
+  //printArrayDouble(y2, P, 1);
   printf("\n");
-  //printArray(y3, P, 1);
+  //printArrayDouble(y3, P, 1);
   updateYBu(0,y0,U,YBu);
   //updateYBu(1,y1,U,YBu);
   printf("\n");
-  printArray(YBu,P*T,1);
+  printArrayDouble(YBu,P*T,1);
   //updateYBu(2,y2,U,YBu);
   //updateYBu(3,y3,U,YBu);
-  //printArray(YBu,P*T,1);
+  //printArrayDouble(YBu,P*T,1);
 
   return 0;
 }
