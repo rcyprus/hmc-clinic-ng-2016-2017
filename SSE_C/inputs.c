@@ -266,23 +266,27 @@ void printArrayInt(int* array, int rows, int cols){
  * Read in 1D array from file (w/ comma delimiter) 
  */
 void readArrayFromFile(const char* file_name, double* array){
+  // Open file
   FILE* file = fopen (file_name, "r");
-  // printf("break 1");
+  
+  // Check if file was opened
+  if(file == NULL){
+    fprintf(stderr,"Failed to open file '%s'\n",file_name);
+  }
+
+  printf("Scanning file: %s\n", file_name);
+
   double i = 0;
   int index = 0;
-  printf("Scanning file: %s\n", file_name);
-  fscanf (file, "%lf,", &i); 
-  
-  // printf("break 2");
-  
-  while (!feof (file))
+
+  // Read until end of file
+  while(fscanf(file, "%lf,", &i) > 0)
   {  
       array[index] = i;
       index++; 
-      // printf ("%d ", i);
-      fscanf (file, "%lf,", &i);
+      // printf ("%lf ", i);
   }
-  array[index] = i;
+  // Close file
   fclose (file);        
 }
 
@@ -371,15 +375,23 @@ int main(void){
   double y2[P];
   double y3[P];
   double U[m*P];
-  readArrayFromFile("y0new.txt",y0);
+  //readArrayFromFile("y0new.txt",y0);
   readArrayFromFile("y1.txt",y1);
   readArrayFromFile("y2.txt",y2);
   readArrayFromFile("y3.txt",y3);
-  readArrayFromFile("Uvector.txt",U);
+  //readArrayFromFile("Uvector.txt",U);
 
   // Test YBu matrix
-  printf("\n");
+  printf("Debug Printing \n");
   printArrayDouble(y0, P, 1);
+  printf("\n");
+  printArrayDouble(y1, P, 1);
+  printf("\n");
+  printArrayDouble(y2, P, 1);
+  printf("\n");
+  printArrayDouble(y3, P, 1);
+  printf("\n");
+
   //printf("\n");
   //printArrayDouble(y1, P, 1);
   //printf("\n");
@@ -389,7 +401,7 @@ int main(void){
   updateYBu(0,y0,U,YBu);
   //updateYBu(1,y1,U,YBu);
   printf("\n");
-  printArrayDouble(YBu,P*T,1);
+//  printArrayDouble(YBu,P*T,1);
   //updateYBu(2,y2,U,YBu);
   //updateYBu(3,y3,U,YBu);
   //printArrayDouble(YBu,P*T,1);
