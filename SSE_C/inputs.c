@@ -67,31 +67,62 @@ void updateCA(int timeStep) {
  */
 void updateYBu(int timeStep, double* y, double* U, double* YBu) {
   // Initialize temporary arrays
-  double tmpCA[P*n];
+  double tmpYBu[P];
+  double CA[P*n];
   double u[m]; 
   double Bu[n];
   double CABu[P*T];
   double AT[n*n];
-  double tmpYBu[P];
+  
+  // at timestep zero no inputs are necessary
+  if (timeStep == 0) {
+    for (size_t i = 0; i < P; ++i) {
+      tmpYBu[i] = y[i];
+    }
+  }
   
   // Sums previous inputs up through current timeStep
-  for (int i = 1; i < timeStep; ++i) {
+  for (size_t i = 1; i <= timeStep; ++i) {
     // Grab necessary section of U
-    for (int j = 0; j < m; ++j) {
-      u[j] = U[ ((i-1)*m) + j];
+    for (size_t j = 0; j < m; ++j) {
+      u[j] = U[ (i-1)*m + j];
     }
     
     // Perform calculations
     power(timeStep-i, AT);
-    multiply(C, P, n, AT, n, n, tmpCA);
-    multiply(B, n, m, u, m, 1, Bu);
+    multiply(C,  P, n, AT, n, n, CA);
+    multiply(B,  n, m, u,  m, 1, Bu);
     multiply(CA, P, n, Bu, n, 1, CABu);
-    sub(y, CABu, P*T, tmpYBu);
+    sub(y, CABu, P, tmpYBu);
   }
 
   // Copy tmpYBu into full YBu matrix
-  for (int i = 0; i < P; ++i) {
+  for (size_t i = 0; i < P; ++i) {
     YBu[P*timeStep+i] = tmpYBu[i];
+  }
+}
+
+/* 
+ * Given the initial state output from CVX and U (vector of global inputs),
+ * propagates system dynamics to obtain the previous system state
+ */
+void propagateDynamics(int timeStep, double* U, double* x) {
+  // Initialize temporary variables
+  double u[m];
+  double Ax[n];
+  double Bu[n];
+
+  // Loop through timesteps
+  for (size_t t = 0; t < timeStep; ++t) {
+    // Grab necessary inputs
+    for (size_t j = 0; j < m; ++j) {
+      u[j] = U[m*t+j];
+    }
+
+    // Propagate system dynamics
+    multiply(A, n, n, x, n, 1, Ax);
+    multiply(B, n, m, u, m, 1, Bu);
+    add(Ax, Bu, n, x);
   }
 }
 
@@ -138,7 +169,6 @@ void multiply(double* X, int rowsX, int colsX,
               double* XY ) {
   // Throw an exception if the matrix sizes are not compatible
   if (colsX != rowsY) {
-    // TODO
     printf("ERROR: Matrix dimensions must match");
   }
 
@@ -316,20 +346,53 @@ int main(void){
   readArrayFromFile("Bmatrix.txt", B);
   readArrayFromFile("Cmatrix.txt", C);
 
-  // Test CA matrix
-  //updateCA(T);
-  //printArray(CA, P*T, n);
-  
   // Test power
   double AT[n*n];
   power(0, AT); // raise A to the zero power, should output the identity
-  printArray(AT,n,n);
+  //printArray(AT,n,n);
   printf("\n");
   power(1, AT); // raise A to the first power, should output A
-  printArray(AT,n,n);
+  //printArray(AT,n,n);
   printf("\n");
   power(2, AT); // raise A to the second power, should output A^2
-  printArray(AT,n,n);
+  //printArray(AT,n,n);
   
+  // Test CA matrix
+  printf("\n");
+  updateCA(0);
+  updateCA(1);
+  updateCA(2);
+  updateCA(3);
+  //printArray(CA, P*T, n);
+  
+  // load inputs
+  double y0[P];
+  double y1[P];
+  double y2[P];
+  double y3[P];
+  double U[m*P];
+  readArrayFromFile("y0new.txt",y0);
+  readArrayFromFile("y1.txt",y1);
+  readArrayFromFile("y2.txt",y2);
+  readArrayFromFile("y3.txt",y3);
+  readArrayFromFile("Uvector.txt",U);
+
+  // Test YBu matrix
+  printf("\n");
+  printArray(y0, P, 1);
+  //printf("\n");
+  //printArray(y1, P, 1);
+  //printf("\n");
+  //printArray(y2, P, 1);
+  printf("\n");
+  //printArray(y3, P, 1);
+  updateYBu(0,y0,U,YBu);
+  //updateYBu(1,y1,U,YBu);
+  printf("\n");
+  printArray(YBu,P*T,1);
+  //updateYBu(2,y2,U,YBu);
+  //updateYBu(3,y3,U,YBu);
+  //printArray(YBu,P*T,1);
+
   return 0;
 }

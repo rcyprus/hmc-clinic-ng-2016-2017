@@ -24,6 +24,8 @@ void updateCA(int timeStep);
  */
 void updateYBu(int timeStep, double* y, double* U, double* YBu);
 
+void propagateDynamics(int timeStep, double* U, double* x);
+
 /* 
  * Raises the square matrix A with a size len x len to the power of T
  * (Currently only applied to global matrix A)
