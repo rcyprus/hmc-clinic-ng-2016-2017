@@ -231,9 +231,9 @@ void sub(double* x, double* y, int len, double* xminy) {
 
 
 /*
- * Debugging print function (only 2D arrays)
+ * Debugging print function (only 2D double arrays)
  */
-void printArray(double* array, int rows, int cols){
+void printArrayDouble(double* array, int rows, int cols){
   // Loop down rows
   for(int i = 0; i < rows; ++i){
     printf("  ");
