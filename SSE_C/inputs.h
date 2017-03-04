@@ -59,7 +59,7 @@ void printArrayDouble(double* array, int rows, int cols);
 /*
  * Debugging print function (only 2D int arrays)
  */
-void printArrayInt(int* array, int rows, int cols)
+void printArrayInt(int* array, int rows, int cols);
 
 /*
  * Read in 1D array from file (w/ comma delimiter) 
