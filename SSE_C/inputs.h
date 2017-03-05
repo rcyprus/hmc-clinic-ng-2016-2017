@@ -4,6 +4,27 @@
 #ifndef INPUTS_H_INCLUDED
 #define INPUTS_H_INCLUDED 1
 
+// Define constants
+#define n 10 // states
+#define P 38 // sensors
+#define T 4  // timesteps
+#define m 5  // inputs (4 motors + gravity)
+
+// Constant Matrices
+double A[n*n]; // nxn
+double B[n*m]; // nxm
+double C[P*n]; // Pxn
+
+// Constant (but need to populate)
+int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
+
+// Update contents after each timeStep
+double CA[P*T*n]; // PTxn
+double YBu[P*T]; // PTx1
+
+// Store system state
+double x[n];
+
 /* 
  * Creates a T x PT matrix for with the indexed variable p
  */
