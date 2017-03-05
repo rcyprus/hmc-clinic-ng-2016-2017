@@ -14,7 +14,6 @@
 #define m 5
 
 // Constant Matrices
-// // TODO: Define system matrices from a text file??!
 double A[n*n]; // nxn
 double B[n*m]; // nxm
 double C[P*n]; // Pxn
@@ -26,6 +25,9 @@ int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 double CA[P*T*n]; // PTxn
 double YBu[P*T]; // PTx1
 
+////////////////////////////
+// CVXgen input functions //
+////////////////////////////
 /* 
  * Setup a P, TxPT matrices for with the indexed variable p
  */
@@ -67,18 +69,18 @@ void updateCA(int timeStep) {
  */
 void updateYBu(int timeStep, double* y, double* U, double* YBu) {
   // Initialize temporary arrays
-  double tmpYBu[P];
   double AT[n*n];
   double CA[P*n];
   double u[m]; 
   double Bu[n];
   double CABu[P*T];
-  
-  // at timestep zero no inputs are necessary
-  if (timeStep == 0) {
-    for (size_t i = 0; i < P; ++i) {
-      tmpYBu[i] = y[i];
-    }
+  double tmpYBu[P];
+  double tmpYBu2[P];
+
+  // put sensor outputs into output matrix
+  for (size_t i = 0; i < P; ++i) {
+    tmpYBu[i] = y[i];
+    //YBu[P*timeStep+i] = y[i];
   }
   
   // Sums previous inputs up through current timeStep
@@ -87,24 +89,31 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
     for (size_t j = 0; j < m; ++j) {
       u[j] = U[ i*m + j];
     }
-    printArrayDouble(u,1,m);
+
+    printf("Timestep is %d\n",i);
+    //printArrayDouble(B,n,m);
+    //printArrayDouble(u,m,1);
 
     // Perform calculations
     power((timeStep-1)-i, AT);
-    printArrayDouble(AT,n,n);
+    //printArrayDouble(AT,n,n);
     multiply(C,  P, n, AT, n, n, CA);
-    printArrayDouble(CA,P,n);
+    //printArrayDouble(CA,P,n);
+    
     multiply(B,  n, m, u,  m, 1, Bu);
-    printArrayDouble(Bu,n,1);
+    //printArrayDouble(Bu,n,1);
     multiply(CA, P, n, Bu, n, 1, CABu);
     printArrayDouble(CABu,P,1);
-    sub(y, CABu, P, tmpYBu);
-    printArrayDouble(tmpYBu,P,1);
+    sub(tmpYBu, CABu, P, tmpYBu2);
+    //printArrayDouble(tmpYBu,P,1);
+    
+    for (size_t j = 0; j < P; ++j) {
+      tmpYBu[j] = tmpYBu2[j];
+    }
   }
-
   // Copy tmpYBu into full YBu matrix
   for (size_t i = 0; i < P; ++i) {
-    YBu[P*timeStep+i] = tmpYBu[i];
+    YBu[P*timeStep+i] += tmpYBu[i];
   }
 }
 
@@ -132,6 +141,9 @@ void propagateDynamics(int timeStep, double* U, double* x) {
   }
 }
 
+/////////////////////////////
+// Matrix helper functions //
+/////////////////////////////
 /* 
  * Raises the square matrix A with a size len x len to the power of t
  * (Currently only applied to global matrix A)
@@ -188,21 +200,32 @@ void multiply(double* X, int rowsX, int colsX,
   double tmpcolY[rowsY];
   
   for (int r = 0; r < rowsX; ++r) { // 3 times
+
+    // grab the correct row of the first matrix
+    for (int i = 0; i < colsX; ++i) {
+      tmprowX[i] = X[(r*colsX)+i];
+    }
+
     for (int c = 0; c < colsY; ++c) { // 4 times
-      // Fill temporary arrays
-      for (int i = 0; i < colsX; ++i) {
-        tmprowX[i] = X[(r*colsX)+i];
+
+      // grab the correct column of the second matrix
+      for (int j = 0; j < rowsY; ++j) {
+        tmpcolY[j] = Y[c+(j*colsY)];
       }
-      for (int i = 0; i < rowsY; ++i) {
-        tmpcolY[i] = Y[c+(i*rowsY)];
-      }
-      
+
+      //printArrayDouble(tmprowX,colsX,1);
+      //printArrayDouble(tmpcolY,rowsY,1);
+
       // Save dot product in output array
       XY[c + r*colsY] = dot(tmprowX, tmpcolY, colsX);
+      //printf("Dot product is: %lf\n",XY[c + r*colsY]);
     }
   }
 }
 
+///////////////////////////////////
+// Scalar array helper functions //
+///////////////////////////////////
 /* 
  * Takes the dot product of vectors x and y (vectors must have length len)
  */
@@ -235,7 +258,9 @@ void sub(double* x, double* y, int len, double* xminy) {
   }
 }
 
-
+/////////////////////
+// Print functions //
+/////////////////////
 /*
  * Debugging print function (only 2D double arrays)
  */
@@ -270,27 +295,34 @@ void printArrayInt(int* array, int rows, int cols){
   printf("\n");
 }
 
+///////////////////////////////////
+// Read in arrays from text file //
+///////////////////////////////////
 /*
  * Read in 1D array from file (w/ comma delimiter) 
  */
 void readArrayFromFile(const char* file_name, double* array){
+  // Open file
   FILE* file = fopen (file_name, "r");
-  // printf("break 1");
+  
+  // Check if file was opened
+  if(file == NULL){
+    fprintf(stderr,"Failed to open file '%s'\n",file_name);
+  }
+
+  printf("Scanning file: %s\n", file_name);
+
   double i = 0;
   int index = 0;
-  printf("Scanning file: %s\n", file_name);
-  fscanf (file, "%lf,", &i); 
-  
-  // printf("break 2");
-  
-  while (!feof (file))
+
+  // Read until end of file
+  while(fscanf(file, "%lf,", &i) > 0)
   {  
       array[index] = i;
       index++; 
-      // printf ("%d ", i);
-      fscanf (file, "%lf,", &i);
+      // printf ("%lf ", i);
   }
-  array[index] = i;
+  // Close file
   fclose (file);        
 }
 
@@ -299,8 +331,8 @@ void readArrayFromFile(const char* file_name, double* array){
   A = rand(N); //square matrix
   A = reshape(A',[1,N*N]);
   dlmwrite('filename.txt',A);
-
 */
+
 void simpleFile(void)
 {
     FILE* f = fopen("test.txt", "r");
@@ -321,33 +353,43 @@ void simpleFile(void)
     fclose(f);
 }
 
-
+///////////////////////////
+// Main testing function //
+///////////////////////////
 int main(void){
-  printf("compiled\n");
+  printf("Compiled successfully!\n");
+
+  // Test dot and multipy
+  // --------------------
+  /*
   // printf("try load file\n");
   // Initialize test array
   double test[25];
   
   // Fill Test array with text file and print
   readArrayFromFile("test.txt", test);
-  printArrayDouble(test,5,5);
+  //printArrayDouble(test,5,5);
   
   // Test dot product
   double testDot = dot(test,test,25);
-  printf("Test dot: %lf\n",testDot);
+  //printf("Test dot: %lf\n", testDot);
   
   // Test multiply
   double testMultiply[25];
   multiply(test,5,5, test,5,5, testMultiply);
   printf("Test muliply: \n");
-  printArrayDouble(testMultiply, 5,5);
-  
+  //printArrayDouble(testMultiply, 5,5);
+  */
+
   // Test I matrix
+  // -------------
+  /*
   setupI();
   printf("Test I[1] matrix:\n");
   printArrayInt(I[1], T, T*P);
   printf("Test I[5] matrix:\n");
   printArrayInt(I[5], T, T*P);
+  */
   
   // Load A, B, and C matrices
   readArrayFromFile("Amatrix.txt", A);
@@ -355,24 +397,28 @@ int main(void){
   readArrayFromFile("Cmatrix.txt", C);
 
   // Test power
+  // ----------
+  /*
   double AT[n*n];
   power(0, AT); // raise A to the zero power, should output the identity
-  //printArrayDouble(AT,n,n);
-  printf("\n");
+  printArrayDouble(AT,n,n);
   power(1, AT); // raise A to the first power, should output A
-  //printArrayDouble(AT,n,n);
-  printf("\n");
+  printArrayDouble(AT,n,n);
   power(2, AT); // raise A to the second power, should output A^2
-  //printArrayDouble(AT,n,n);
-  
+  printArrayDouble(AT,n,n);
+  */
+
   // Test CA matrix
+  // --------------
+  /*
   printf("\n");
   updateCA(0);
   updateCA(1);
   updateCA(2);
   updateCA(3);
-  //printArrayDouble(CA, P*T, n);
-  
+  printArrayDouble(CA, P*T, n);
+  */
+
   // load inputs
   double y0[P];
   double y1[P];
@@ -384,24 +430,32 @@ int main(void){
   readArrayFromFile("y2.txt",y2);
   readArrayFromFile("y3.txt",y3);
   readArrayFromFile("Uvector.txt",U);
+  //printArrayDouble(y0, P, 1);
+  //printArrayDouble(y1, P, 1);
+  //printArrayDouble(y2, P, 1);
+  //printArrayDouble(y3, P, 1);
+  //printArrayDouble(U,T,m);
+
+  // Test multiply (again)
+  /*
+  printf("Multiplication test\n");
+  double matrix55[25];
+  double vector51[5];
+  double out[5];
+  readArrayFromFile("test.txt",matrix55);
+  readArrayFromFile("Text10.txt",vector51);
+  printArrayDouble(matrix55,5,5);
+  printArrayDouble(vector51,5,1);
+  multiply(matrix55,5,5,vector51,5,1,out);
+  printArrayDouble(out,5,1);
+  */
 
   // Test YBu matrix
-  printf("\n");
-  printArrayDouble(U,T,m);
-  printf("\n");
-  printArrayDouble(y0, P, 1);
-  //printf("\n");
-  //printArrayDouble(y1, P, 1);
-  //printf("\n");
-  //printArrayDouble(y2, P, 1);
-  printf("\n");
-  //printArrayDouble(y3, P, 1);
-  //updateYBu(0,y0,U,YBu);
+  updateYBu(0,y0,U,YBu);
   updateYBu(1,y1,U,YBu);
-  printf("\n");
+  updateYBu(2,y2,U,YBu);
+  updateYBu(3,y3,U,YBu);
   printArrayDouble(YBu,P*T,1);
-  //updateYBu(2,y2,U,YBu);
-  //updateYBu(3,y3,U,YBu);
 
   return 0;
 }
