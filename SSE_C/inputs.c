@@ -4,14 +4,10 @@
 #include <stdio.h>
 
 // Define constants
-// const int n = 10; // states
-// const int P = 38; // sensors
-// const int T = 100; // timesteps
-// const int m = 5; // inputs
-#define n 10
-#define P 38
-#define T 4
-#define m 5
+#define n 10 // states
+#define P 38 // sensors
+#define T 4  // timesteps
+#define m 5  // inputs (4 motors + gravity)
 
 // Constant Matrices
 double A[n*n]; // nxn
@@ -24,6 +20,9 @@ int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 // Update contents after each timeStep
 double CA[P*T*n]; // PTxn
 double YBu[P*T]; // PTx1
+
+// Store system state
+double x[n];
 
 ////////////////////////////
 // CVXgen input functions //
@@ -90,7 +89,7 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
       u[j] = U[ i*m + j];
     }
 
-    printf("Timestep is %d\n",i);
+    //printf("Timestep is %d\n",i);
     //printArrayDouble(B,n,m);
     //printArrayDouble(u,m,1);
 
@@ -103,7 +102,7 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
     multiply(B,  n, m, u,  m, 1, Bu);
     //printArrayDouble(Bu,n,1);
     multiply(CA, P, n, Bu, n, 1, CABu);
-    printArrayDouble(CABu,P,1);
+    //printArrayDouble(CABu,P,1);
     sub(tmpYBu, CABu, P, tmpYBu2);
     //printArrayDouble(tmpYBu,P,1);
     
@@ -119,14 +118,14 @@ void updateYBu(int timeStep, double* y, double* U, double* YBu) {
 
 /* 
  * Given the initial state output from CVX and U (vector of global inputs),
- * propagates system dynamics to obtain the previous system state
+ * propagate system dynamics to obtain the previous system state
  */
 void propagateDynamics(int timeStep, double* U, double* x) {
   // Initialize temporary variables
   double u[m];
   double Ax[n];
   double Bu[n];
-
+  
   // Loop through timesteps
   for (size_t t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
@@ -451,11 +450,30 @@ int main(void){
   */
 
   // Test YBu matrix
+  /*
   updateYBu(0,y0,U,YBu);
   updateYBu(1,y1,U,YBu);
   updateYBu(2,y2,U,YBu);
   updateYBu(3,y3,U,YBu);
   printArrayDouble(YBu,P*T,1);
+  */
+  
+  // Test propagation of system dynamics
+  readArrayFromFile("xvector.txt",x);
+  propagateDynamics(0, U, x);
+  printArrayDouble(x,n,1);
+
+  readArrayFromFile("xvector.txt",x);
+  propagateDynamics(1, U, x);
+  printArrayDouble(x,n,1);
+
+  readArrayFromFile("xvector.txt",x);
+  propagateDynamics(2, U, x);
+  printArrayDouble(x,n,1);
+
+  readArrayFromFile("xvector.txt",x);
+  propagateDynamics(3, U, x);
+  printArrayDouble(x,n,1);
 
   return 0;
 }
