@@ -66,12 +66,6 @@ void printArrayInt(int* array, int rows, int cols);
  */
 void readArrayFromFile(const char* file_name, double* array);
 
-/*
- * Simple read function to test fscan
- */
-void simpleFile(void);
-
-
 
 #endif
 

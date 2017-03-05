@@ -48,6 +48,7 @@ void updateCA(int timeStep) {
   // Initialize intermediate array and output array
   double tmpCA[P*n];
   double AT[n*n];
+  int index;
 
   // Compute C*(A^T)
   power(timeStep, AT);
@@ -55,7 +56,8 @@ void updateCA(int timeStep) {
 
   // Copy tmpCA into full CA matrix
   for (int i = 0; i < P*n; ++i) {
-    CA[(P*n)*timeStep+i] = tmpCA[i];
+    index = P*n * timeStep + i;
+    CA[index] = tmpCA[i];
   }
 }
 
@@ -331,26 +333,6 @@ void readArrayFromFile(const char* file_name, double* array){
   A = reshape(A',[1,N*N]);
   dlmwrite('filename.txt',A);
 */
-
-void simpleFile(void)
-{
-    FILE* f = fopen("test.txt", "r");
-    int k = 0;
-    int i = 0;
-    int numbers[10]; // assuming there are only 5 numbers in the file
-
-    while( fscanf(f, "%d,", &k) > 0 ) // parse %d followed by ','
-    {
-        numbers[i++] = k;
-    }
-
-    for(int j = 0; j < 10; j++){
-      printf("%d, ",numbers[j]);
-    }
-    printf("\n");
-
-    fclose(f);
-}
 
 ///////////////////////////
 // Main testing function //
