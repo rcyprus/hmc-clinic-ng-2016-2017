@@ -5,30 +5,32 @@
 #define INPUTS_H_INCLUDED 1
 
 // Define constants
-#define n 10 // states
-#define P 38 // sensors
-#define T 4  // timesteps
-#define m 5  // inputs (4 motors + gravity)
+#define N 5 // states
+#define P 5 // sensors
+#define T 3 // timesteps
+#define M 3 // inputs
 
 // Constant Matrices
-double A[n*n]; // nxn
-double B[n*m]; // nxm
-double C[P*n]; // Pxn
+double A[N*N]; // nxn
+double B[N*M]; // nxm
+double C[P*N]; // Pxn
 
 // Constant (but need to populate)
 int I[P+1][T*T*P]; // P+1 b/c CVXGEN may use only the latter 5 rows ...
 
 // Update contents after each timeStep
-double CA[P*T*n]; // PTxn
+double CA[P*T*N]; // PTxn
 double YBu[P*T]; // PTx1
+double U[M*T];
+double y[P];
 
 // Store system state
-double x[n];
+double x[N];
 
 /* 
  * Creates a T x PT matrix for with the indexed variable p
  */
-void setupI(void);
+void setupI();
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
@@ -43,8 +45,12 @@ void updateCA(int timeStep);
  *         U: control inputs (all time) (mTx1)
  * Output: YBu (global matrix) (PTx1)
  */
-void updateYBu(int timeStep, double* y, double* U, double* YBu);
+void updateYBu(int timeStep, double* y, double* U);
 
+/* 
+ * Given the initial state output from CVX and U (vector of global inputs),
+ * propagate system dynamics to obtain the previous system state
+ */
 void propagateDynamics(int timeStep, double* U, double* x);
 
 /* 
@@ -87,6 +93,6 @@ void printArrayInt(int* array, int rows, int cols);
  */
 void readArrayFromFile(const char* file_name, double* array);
 
-
 #endif
+
 
