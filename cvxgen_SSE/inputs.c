@@ -14,7 +14,9 @@ void setupI(void) {
   for (int p = 0; p < P; ++p) {
     // Put ones where we want them
     for (int t = 0; t < T; ++t) {
-      I[p+1][p + t*(P+P*T)] = 1;
+      //I[p+1][p + t*(P+P*T)] = 1;
+      //I[p+1][p + t*P + t*P*T] = 1;
+      I[p+1][t*P*T + t + p*T] = 1;
     }
   }
 }
@@ -25,16 +27,16 @@ void setupI(void) {
  */
 void updateCA(int timeStep) {
   // Initialize intermediate array and output array
-  double tmpCA[P*n];
-  double AT[n*n];
+  double tmpCA[P*N];
+  double AT[N*N];
 
   // Compute C*(A^T)
   power(timeStep, AT);
-  multiply(C, P, n, AT, n, n, tmpCA);
+  multiply(C, P, N, AT, N, N, tmpCA);
 
   // Copy tmpCA into full CA matrix
-  for (int i = 0; i < P*n; ++i) {
-    CA[(P*n)*timeStep+i] = tmpCA[i];
+  for (int i = 0; i < P*N; ++i) {
+    CA[(P*N)*timeStep+i] = tmpCA[i];
   }
 }
 
@@ -47,10 +49,10 @@ void updateCA(int timeStep) {
  */
 void updateYBu(int timeStep, double* y, double* U) {
   // Initialize temporary arrays
-  double AT[n*n];
-  double CA[P*n];
-  double u[m]; 
-  double Bu[n];
+  double AT[N*N];
+  double CA[P*N];
+  double u[M]; 
+  double Bu[N];
   double CABu[P*T];
   double tmpYBu[P];
   double tmpYBu2[P];
@@ -64,8 +66,8 @@ void updateYBu(int timeStep, double* y, double* U) {
   // Sums previous inputs up through current timeStep
   for (size_t i = 0; i < timeStep; ++i) {
     // Grab necessary section of U
-    for (size_t j = 0; j < m; ++j) {
-      u[j] = U[ i*m + j];
+    for (size_t j = 0; j < M; ++j) {
+      u[j] = U[ i*M + j];
     }
 
     //printf("Timestep is %d\n",i);
@@ -75,12 +77,12 @@ void updateYBu(int timeStep, double* y, double* U) {
     // Perform calculations
     power((timeStep-1)-i, AT);
     //printArrayDouble(AT,n,n);
-    multiply(C,  P, n, AT, n, n, CA);
+    multiply(C,  P, N, AT, N, N, CA);
     //printArrayDouble(CA,P,n);
     
-    multiply(B,  n, m, u,  m, 1, Bu);
+    multiply(B,  N, M, u, M, 1, Bu);
     //printArrayDouble(Bu,n,1);
-    multiply(CA, P, n, Bu, n, 1, CABu);
+    multiply(CA, P, N, Bu, N, 1, CABu);
     //printArrayDouble(CABu,P,1);
     sub(tmpYBu, CABu, P, tmpYBu2);
     //printArrayDouble(tmpYBu,P,1);
@@ -101,21 +103,21 @@ void updateYBu(int timeStep, double* y, double* U) {
  */
 void propagateDynamics(int timeStep, double* U, double* x) {
   // Initialize temporary variables
-  double u[m];
-  double Ax[n];
-  double Bu[n];
+  double u[M];
+  double Ax[N];
+  double Bu[N];
   
   // Loop through timesteps
   for (size_t t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
-    for (size_t j = 0; j < m; ++j) {
-      u[j] = U[m*t+j];
+    for (size_t j = 0; j < M; ++j) {
+      u[j] = U[M*t+j];
     }
 
     // Propagate system dynamics
-    multiply(A, n, n, x, n, 1, Ax);
-    multiply(B, n, m, u, m, 1, Bu);
-    add(Ax, Bu, n, x);
+    multiply(A, N, N, x, N, 1, Ax);
+    multiply(B, N, M, u, M, 1, Bu);
+    add(Ax, Bu, N, x);
   }
 }
 
@@ -128,16 +130,16 @@ void propagateDynamics(int timeStep, double* U, double* x) {
  */
 void power(int t, double* AT) {
   // Create temporary matrix
-  double tmpAT[n*n];
+  double tmpAT[N*N];
 
   // Fill the output AT matrix with zeros
-  for (size_t i = 0; i < n*n; ++i) {
+  for (size_t i = 0; i < N*N; ++i) {
     AT[i] = 0;
   }
   
   // Make AT the identity matrix
-  for (size_t i = 0; i < n; ++i) {
-    AT[i*(n+1)] = 1;
+  for (size_t i = 0; i < N; ++i) {
+    AT[i*(N+1)] = 1;
   }
   
   // If t is zero we want to return the identity without doing multiplication
@@ -147,9 +149,9 @@ void power(int t, double* AT) {
   else {
     // Loop through the number of powers desired
     for (size_t i = 0; i < t; ++i) {
-      multiply(A, n, n, AT, n, n, tmpAT);
+      multiply(A, N, N, AT, N, N, tmpAT);
       // Copy tmpAT into AT
-      for (size_t j=0; j < n*n; ++j) {
+      for (size_t j = 0; j < N*N; ++j) {
         AT[j] = tmpAT[j];
       }
     }
@@ -195,7 +197,8 @@ void multiply(double* X, int rowsX, int colsX,
       //printArrayDouble(tmpcolY,rowsY,1);
 
       // Save dot product in output array
-      XY[c + r*colsY] = dot(tmprowX, tmpcolY, colsX);
+      //XY[c + r*colsY] = dot(tmprowX, tmpcolY, colsX);
+      XY[c*rowsX + r] = dot(tmprowX, tmpcolY, colsX);
       //printf("Dot product is: %lf\n",XY[c + r*colsY]);
     }
   }
@@ -244,11 +247,14 @@ void sub(double* x, double* y, int len, double* xminy) {
  */
 void printArrayDouble(double* array, int rows, int cols){
   // Loop down rows
-  for(int i = 0; i < rows; ++i){
+  for(int j = 0; j < cols; ++j){
+  //for(int i = 0; i < rows; ++i){
     printf("  ");
     // Loop across row
-    for(int j = 0; j < cols; ++j){
-      printf("%lf ", array[i*cols + j]);
+    for(int i = 0; i < rows; ++i){
+    //for(int j = 0; j < cols; ++j){
+      //printf("%lf ", array[i*cols + j]);
+      printf("%lf ", array[i + j*cols]);
     }
     // Print enter
     printf("\n");
@@ -261,11 +267,14 @@ void printArrayDouble(double* array, int rows, int cols){
  */
 void printArrayInt(int* array, int rows, int cols){
   // Loop down rows
-  for(int i = 0; i < rows; ++i){
+  for(int j = 0; j < cols; ++j){
+  //for(int i = 0; i < rows; ++i){
     printf("  ");
     // Loop across row
-    for(int j = 0; j < cols; ++j){
-      printf("%d ", array[i*cols + j]);
+    for(int i = 0; i < rows; ++i){
+    //for(int j = 0; j < cols; ++j){
+      //printf("%lf ", array[i*cols + j]);
+      printf("%d ", array[i + j*cols]);
     }
     // Print enter
     printf("\n");
@@ -311,148 +320,4 @@ void readArrayFromFile(const char* file_name, double* array){
   dlmwrite('filename.txt',A);
 */
 
-void simpleFile(void)
-{
-    FILE* f = fopen("test.txt", "r");
-    int k = 0;
-    int i = 0;
-    int numbers[10]; // assuming there are only 5 numbers in the file
 
-    while( fscanf(f, "%d,", &k) > 0 ) // parse %d followed by ','
-    {
-        numbers[i++] = k;
-    }
-
-    for(int j = 0; j < 10; j++){
-      printf("%d, ",numbers[j]);
-    }
-    printf("\n");
-
-    fclose(f);
-}
-
-///////////////////////////
-// Main testing function //
-///////////////////////////
-int main(void){
-  printf("Compiled successfully!\n");
-
-  // Test dot and multipy
-  // --------------------
-  /*
-  // printf("try load file\n");
-  // Initialize test array
-  double test[25];
-  
-  // Fill Test array with text file and print
-  readArrayFromFile("test.txt", test);
-  //printArrayDouble(test,5,5);
-  
-  // Test dot product
-  double testDot = dot(test,test,25);
-  //printf("Test dot: %lf\n", testDot);
-  
-  // Test multiply
-  double testMultiply[25];
-  multiply(test,5,5, test,5,5, testMultiply);
-  printf("Test muliply: \n");
-  //printArrayDouble(testMultiply, 5,5);
-  */
-
-  // Test I matrix
-  // -------------
-  /*
-  setupI();
-  printf("Test I[1] matrix:\n");
-  printArrayInt(I[1], T, T*P);
-  printf("Test I[5] matrix:\n");
-  printArrayInt(I[5], T, T*P);
-  */
-  
-  // Load A, B, and C matrices
-  readArrayFromFile("Amatrix.txt", A);
-  readArrayFromFile("Bmatrix.txt", B);
-  readArrayFromFile("Cmatrix.txt", C);
-
-  // Test power
-  // ----------
-  /*
-  double AT[n*n];
-  power(0, AT); // raise A to the zero power, should output the identity
-  printArrayDouble(AT,n,n);
-  power(1, AT); // raise A to the first power, should output A
-  printArrayDouble(AT,n,n);
-  power(2, AT); // raise A to the second power, should output A^2
-  printArrayDouble(AT,n,n);
-  */
-
-  // Test CA matrix
-  // --------------
-  /*
-  printf("\n");
-  updateCA(0);
-  updateCA(1);
-  updateCA(2);
-  updateCA(3);
-  printArrayDouble(CA, P*T, n);
-  */
-
-  // load inputs
-  double y0[P];
-  double y1[P];
-  double y2[P];
-  double y3[P];
-  double U[m*T];
-  readArrayFromFile("y0.txt",y0);
-  readArrayFromFile("y1.txt",y1);
-  readArrayFromFile("y2.txt",y2);
-  readArrayFromFile("y3.txt",y3);
-  readArrayFromFile("Uvector.txt",U);
-  //printArrayDouble(y0, P, 1);
-  //printArrayDouble(y1, P, 1);
-  //printArrayDouble(y2, P, 1);
-  //printArrayDouble(y3, P, 1);
-  //printArrayDouble(U,T,m);
-
-  // Test multiply (again)
-  /*
-  printf("Multiplication test\n");
-  double matrix55[25];
-  double vector51[5];
-  double out[5];
-  readArrayFromFile("test.txt",matrix55);
-  readArrayFromFile("Text10.txt",vector51);
-  printArrayDouble(matrix55,5,5);
-  printArrayDouble(vector51,5,1);
-  multiply(matrix55,5,5,vector51,5,1,out);
-  printArrayDouble(out,5,1);
-  */
-
-  // Test YBu matrix
-  /*
-  updateYBu(0,y0,U,YBu);
-  updateYBu(1,y1,U,YBu);
-  updateYBu(2,y2,U,YBu);
-  updateYBu(3,y3,U,YBu);
-  printArrayDouble(YBu,P*T,1);
-  */
-  
-  // Test propagation of system dynamics
-  readArrayFromFile("xvector.txt",x);
-  propagateDynamics(0, U, x);
-  printArrayDouble(x,n,1);
-
-  readArrayFromFile("xvector.txt",x);
-  propagateDynamics(1, U, x);
-  printArrayDouble(x,n,1);
-
-  readArrayFromFile("xvector.txt",x);
-  propagateDynamics(2, U, x);
-  printArrayDouble(x,n,1);
-
-  readArrayFromFile("xvector.txt",x);
-  propagateDynamics(3, U, x);
-  printArrayDouble(x,n,1);
-
-  return 0;
-}
