@@ -45,12 +45,13 @@ int main(int argc, char **argv) {
   // Create string to store y filename
   // *** CHANGE THIS WHEN Y LIVES IN ONE FILE ***
   char filenameY[6];
+  char filenameX[6];
   
   // START TIMING
   clock_t begin = clock();
   
   // *** CHANGE THIS TO A WHILE LOOP IN FINAL VERSION ***
-  const int TT = 20;
+  const size_t TT = 10;
   for (size_t ts = 0; ts < TT; ++ts) {
     
     // Read in matrix of control inputs
@@ -107,16 +108,16 @@ int main(int argc, char **argv) {
 
     printf("Optimized x AFTER dynamics propagation is:\n");
     printArrayDouble(vars.x, N, 1);
+
+    // save output state x
+    sprintf(filenameX, "x%u.txt", ts);
+    writeFile(filenameX, vars.x, N);
   }
 
   // END TIMING
   clock_t end = clock();
   double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
   printf("Time to solve per timestep is is %.2f ms\n", time_spent/TT);
-
-  // save output state x
-  char* filenameX = "outputX.txt";
-  writeFile(filenameX, vars.x, N);
 
 #ifndef ZERO_LIBRARY_MODE
 #if (NUMTESTS > 0)

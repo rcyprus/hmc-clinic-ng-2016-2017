@@ -4,6 +4,8 @@
 
 #include "matrix-helper.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* 
  * Multiplies together matrices X and Y (sizes must be compatible)

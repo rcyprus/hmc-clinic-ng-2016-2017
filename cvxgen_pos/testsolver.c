@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     printf("Optimized x AFTER dynamics propagation is:\n");
     printArrayDouble(vars.x, N, 1);
 
-    // should probably save output state x at this point
+    // save output state x
     sprintf(filenameX, "x%u.txt", ts);
     writeFile(filenameX, vars.x, N);
   }
