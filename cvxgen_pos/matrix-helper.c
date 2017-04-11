@@ -217,6 +217,102 @@ void readArrayFromFile(const char* file_name, double* array) {
   fclose (file);        
 }
 
+/**
+ * @brief      Reads last N lines of a file
+ *
+ * @param[in]  file_name       The file name
+ * @param      data            vector to store the read data
+ * @param[in]  entriesPerLine  the "width" of a line (number of entries)
+ * @param[in]  numLines        the number of lines we want to read 
+ *                             (1 for last line, 3 for last 3 lines)
+ */
+void readLastLines(const char* file_name, double* data, int entriesPerLine, int numLines){
+
+    // Make room for return values
+    double buff [entriesPerLine*numLines];
+
+    // Open file
+    FILE* file = fopen (file_name, "r");
+
+    // Check if file was opened
+    if(file == NULL){
+        fprintf(stderr,"Failed to open file '%s'\n",file_name);
+    }
+
+    printf("Scanning file: %s\n", file_name);
+
+    double i = 0;
+    char c;
+    int colIndex = 0;
+    int matrixIndex = 0;
+    int count = 0;
+
+    int flag = 0;
+
+    // Read until end of file
+    while(fscanf(file, "%lf%c", &i, &c) > 0)
+    {  
+        // shift array IF just previously read a new line
+        if(flag){
+            shiftArray(buff, entriesPerLine, numLines);
+            flag = 0;
+        }
+        // Store data
+        buff[matrixIndex] = i;
+
+        if(matrixIndex < entriesPerLine*(numLines-1) ){
+            matrixIndex++;
+            continue;
+        }
+        // past the beginning stuff
+        // If at the end of line,
+        if(matrixIndex == entriesPerLine*numLines - 1){
+            // Set flag to shift array on next rotation
+            //  (don't shift array now, b/c if it is at the last line, 
+            //  want to keep the values, ie, just return at that point)
+            flag = 1;
+            matrixIndex = entriesPerLine*(numLines-1);
+            continue;            
+        }
+        else{
+            matrixIndex = entriesPerLine*(numLines-1) + (matrixIndex+1)%entriesPerLine;
+        }
+    }
+    // Close file
+    fclose (file);
+
+    // Copy over values to data
+    int j = 0;
+    for(j = 0; j < entriesPerLine*numLines; j++){
+        data[j] = buff[j];
+    }        
+
+}
+
+/**
+ * @brief      Shift oldest row out, and clears room for new row
+ *
+ * @param      array   passed in array to edit
+ * @param[in]  width   width of the vector
+ * @param[in]  height  height of the vector
+ */
+void shiftArray(double * array, int width, int height){
+    int i,j;
+    for(i = 0; i < height; i ++){
+        for(j = 0; j < width; j++){
+            // Shift rows "up" (shift out old data)
+            if(i < height - 1){
+                array[i*width + j] = array[(i+1)*width + j]; 
+            }
+            // Write 0's to new line
+            else{
+                array[i*width + j] = 0;
+            }
+        }
+    }
+
+}
+
 // Matlab
 /*
   A = rand(N); //square matrix
