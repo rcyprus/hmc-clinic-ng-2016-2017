@@ -48,6 +48,7 @@ int main(int argc, char **argv) {
   
   // Create string to store y filename
   char filenameY[6];
+  char filenameX[6];
 
   // START TIMING
   clock_t begin = clock();
@@ -80,16 +81,16 @@ int main(int argc, char **argv) {
     
     printf("Optimized x AFTER dynamics propagation is:\n");
     printArrayDouble(vars.x, N, 1);
+
+    // should probably save output state x at this point
+    sprintf(filenameX, "x%u.txt", ts);
+    writeFile(filenameX, vars.x, N);
   }
   
   // END TIMING
   clock_t end = clock();
   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
   printf("Time to solve per timestep is is %.2f ms\n", time_spent/T);
-
-  printArrayDouble(B,N,M);
-  
-  // should probably save output state x at this point
 
 #ifndef ZERO_LIBRARY_MODE
 #if (NUMTESTS > 0)

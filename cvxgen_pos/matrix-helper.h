@@ -34,6 +34,16 @@ void printArrayDouble(double* array, int rows, int cols);
 void printArrayInt(int* array, int rows, int cols);
 
 /*
+ * Write a DOUBLE array to a file
+ */
+int writeFile(char* filename, double data[], int length);
+
+/*
+ * Convert a flat double array to a string
+ */
+char* doubleArrayToString(double data[], int length);
+
+/*
  * Read in 1D array from file (w/ comma delimiter) 
  */
 void readArrayFromFile(const char* file_name, double* array);

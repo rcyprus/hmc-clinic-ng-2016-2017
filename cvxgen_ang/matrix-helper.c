@@ -131,6 +131,59 @@ void printArrayInt(int* array, int rows, int cols){
   printf("\n");
 }
 
+///////////////////////////////
+// Print arrays to text file //
+///////////////////////////////
+char* doubleArrayToString(double data[], int length){
+    
+    int i = 0;
+    int sigFigs = 8; // How many sig figs to keep
+    int bufSize = sigFigs+2;
+    char numBuf[bufSize]; // buffer for each element in array, +2 b/c null char and decimal point
+    
+    // Room for each number, and commas, and space
+    // +1 for zero terminator
+    // MUST FREE LATER!!!!!
+    char* outputString = malloc((bufSize + 3)*length+1);
+
+    // Loop through, converting each elemetn to a string, and concatenating
+    // to output string
+    for(i = 0; i < length; ++i){
+        snprintf(numBuf, bufSize, "%f", data[i]);
+        strcat(outputString, numBuf);
+        strcat(outputString,", ");
+    }
+    return outputString;
+}
+
+
+int writeFile(char* filename, double data [], int length){
+    // Convert data to string
+    char* dataString = doubleArrayToString(data,length);
+
+    // Initialize File object
+    // printf("Break 1");
+    
+    FILE *fp;
+    // printf("Break 2");
+
+    // Open file to write
+    char * mode = "w"; // w: writing mode
+                       // a: writing in appending mode 
+                       //   (still makes new file if doesnt exist)
+    fp = fopen(filename,mode );
+
+    // Print data to file
+    fprintf(fp, "%s", dataString);
+
+    // Close file
+    fclose(fp);
+
+    printf("%s",dataString);
+
+    return 0;
+}
+
 ///////////////////////////////////
 // Read in arrays from text file //
 ///////////////////////////////////

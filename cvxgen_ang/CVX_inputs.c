@@ -27,7 +27,7 @@ void updateCA(int timeStep) {
   //printf("tmpCA is:\n");
   //printArrayDouble(tmpCA,P,N);
 
-  // Copy tmpCA into full CA matrix
+  // Copy tmpCA into full CA matrix (no sparsity)
   /*
   for (int i = 0; i < N; ++i) {
     for (int p = 0; p < P; ++p) {
@@ -69,7 +69,6 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
   // put sensor outputs into output matrix
   for (size_t i = 0; i < P; ++i) {
     tmpYBu[i] = yin[i];
-    //YBu[P*timeStep+i] = y[i];
   }
   
   // Sums previous inputs up through current timeStep
@@ -88,7 +87,6 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
     //printArrayDouble(AT,n,n);
     multiply(C,  P, N, AT, N, N, CA);
     //printArrayDouble(CA,P,n);
-    
     multiply(B,  N, M, u, M, 1, Bu);
     //printArrayDouble(Bu,n,1);
     multiply(CA, P, N, Bu, N, 1, CABu);
