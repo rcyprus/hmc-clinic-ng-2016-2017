@@ -36,12 +36,12 @@ void printArrayInt(int* array, int rows, int cols);
 /*
  * Write a DOUBLE array to a file
  */
-int writeFile(char* filename, double data[], int length);
+int writeFile(char* filename, double* data, int length);
 
 /*
  * Convert a flat double array to a string
  */
-char* doubleArrayToString(double data[], int length);
+char* doubleArrayToString(double* data, int length);
 
 /*
  * Read in 1D array from file (w/ comma delimiter) 

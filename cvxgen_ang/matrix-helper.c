@@ -136,7 +136,7 @@ void printArrayInt(int* array, int rows, int cols){
 ///////////////////////////////
 // Print arrays to text file //
 ///////////////////////////////
-char* doubleArrayToString(double data[], int length){
+char* doubleArrayToString(double* data, int length){
     
     int i = 0;
     int sigFigs = 8; // How many sig figs to keep
@@ -147,19 +147,23 @@ char* doubleArrayToString(double data[], int length){
     // +1 for zero terminator
     // MUST FREE LATER!!!!!
     char* outputString = malloc((bufSize + 3)*length+1);
+    *outputString = '\0';
+    //printf("outputString is: %s\n", outputString);
 
     // Loop through, converting each elemetn to a string, and concatenating
     // to output string
     for(i = 0; i < length; ++i){
         snprintf(numBuf, bufSize, "%f", data[i]);
+        //printf("numBuf is: %s\n", numBuf);
         strcat(outputString, numBuf);
         strcat(outputString,", ");
+        //printf("outputString is: %s\n", outputString);
     }
     return outputString;
 }
 
 
-int writeFile(char* filename, double data [], int length){
+int writeFile(char* filename, double* data, int length){
     // Convert data to string
     char* dataString = doubleArrayToString(data,length);
 
@@ -181,6 +185,7 @@ int writeFile(char* filename, double data [], int length){
     // Close file
     fclose(fp);
 
+    printf("dataString is: ");
     printf("%s",dataString);
 
     return 0;

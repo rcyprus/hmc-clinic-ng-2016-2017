@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     
     // Here we need to recreate the entire YBu matrix
     else {
+      printf("else case load data\n");
       // Loop through T timesteps
       for (size_t t = 0; t < T; ++t) {
         sprintf(filenameY, "y%u.txt", ts);
@@ -103,6 +104,7 @@ int main(int argc, char **argv) {
       propagateDynamics(ts, U, vars.x);
     }
     else {
+      printf("else case propagate dynamics\n");
       propagateDynamics(T, U, vars.x);
     }
 
@@ -118,6 +120,13 @@ int main(int argc, char **argv) {
   clock_t end = clock();
   double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
   printf("Time to solve per timestep is is %.2f ms\n", time_spent/TT);
+
+  printf("A is:\n");
+  printArrayDouble(A,N,N);
+  printf("B is:\n");
+  printArrayDouble(B,N,M);
+  printf("C is:\n");
+  printArrayDouble(C,P,N);
 
 #ifndef ZERO_LIBRARY_MODE
 #if (NUMTESTS > 0)
