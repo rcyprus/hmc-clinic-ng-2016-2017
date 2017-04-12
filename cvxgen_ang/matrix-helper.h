@@ -50,6 +50,7 @@ void readArrayFromFile(const char* file_name, double* array);
 
 //void readLines(const char* file_name, double* data, int startLine, int entriesPerLine, int numLines);
 void readLastLines(const char* file_name, double* data, int entriesPerLine, int numLines);
+void readLines(const char* file_name, double* data, int startLine, int entriesPerLine, int numLines);
 void shiftArray(double * array, int width, int height);
 
 #endif

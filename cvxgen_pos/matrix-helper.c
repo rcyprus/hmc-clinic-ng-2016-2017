@@ -289,6 +289,75 @@ void readLastLines(const char* file_name, double* data, int entriesPerLine, int 
 
 }
 
+
+/**
+ * @brief      Reads N lines of a file given a start line
+ *
+ * @param[in]  file_name       The file name
+ * @param      data            vector to store the read data
+ * @param      startLine       desired starting point for data extraction
+ * @param[in]  entriesPerLine  the "width" of a line (number of entries)
+ * @param[in]  numLines        the number of lines we want to read 
+ *                             (1 for last line, 3 for last 3 lines)
+ */
+void readLines(const char* file_name, double* data, int startLine, int entriesPerLine, int numLines){
+
+    // Make room for return values
+    double buff [entriesPerLine*numLines];
+
+    // Open file
+    FILE* file = fopen (file_name, "r");
+
+    // Check if file was opened
+    if(file == NULL){
+        fprintf(stderr,"Failed to open file '%s'\n",file_name);
+    }
+
+    printf("Scanning file: %s\n", file_name);
+
+    double val = 0;
+    char c;
+    int index = 0;
+    int curLine = 0;
+    int curCol = 0;
+
+    int flag = 0;
+
+    // Read until end of file
+    while(fscanf(file, "%lf%c", &val, &c) > 0) {  
+        // Finish when filled the matrix
+        if(index >= entriesPerLine*numLines){
+            break;
+        }
+
+        // Fill in matrix when hit the start
+        if(curLine >= startLine){
+            buff[index] = val;
+            index++;
+        }
+
+        // Keep track of what line on
+        if(curCol == entriesPerLine-1){
+            curLine++;
+            curCol = 0;
+        }
+        else{
+            curCol++;
+        }
+
+
+    }
+    // Close file
+    fclose (file);
+
+    // Copy over values to data
+    int j = 0;
+    for(j = 0; j < entriesPerLine*numLines; j++){
+        data[j] = buff[j];
+    }        
+
+}
+
 /**
  * @brief      Shift oldest row out, and clears room for new row
  *
