@@ -15,19 +15,21 @@ Vars vars;
 Params params;
 Workspace work;
 Settings settings;
-#define NUMTESTS 0
+//#define NUMTESTS 0
 
 // Add declaration for load_data because C is upset
 void load_CA(int timeStep);
 void load_YBu(int timeStep, double* yin, double* Uin);
 
 int main(int argc, char **argv) {
+/*
   int num_iters;
 #if (NUMTESTS > 0)
   int i;
   double time;
   double time_per;
 #endif
+*/
   set_defaults();
   setup_indexing();
 
@@ -35,16 +37,16 @@ int main(int argc, char **argv) {
   settings.verbose = 1;
 
   // Setup system matrices
-  char* filenameA = "Amatrix.txt";
-  char* filenameB = "Bmatrix.txt";
-  char* filenameC = "Cmatrix.txt";
+  const char* filenameA = "Amatrix.txt";
+  const char* filenameB = "Bmatrix.txt";
+  const char* filenameC = "Cmatrix.txt";
   readArrayFromFile(filenameA, A);
   readArrayFromFile(filenameB, B);
   readArrayFromFile(filenameC, C);
-
+  
   // Create string to store y filename
-  // *** CHANGE THIS WHEN Y LIVES IN ONE FILE ***
-  char filenameY[6];
+  const char* filenameY = "Ymatrix.txt";
+  const char* filenameU = "Umatrix.txt";
   char filenameX[6];
   
   // START TIMING
@@ -54,18 +56,16 @@ int main(int argc, char **argv) {
   const size_t TT = 10;
   for (size_t ts = 0; ts < TT; ++ts) {
     
-    // Read in matrix of control inputs
-    char* filenameU = "Uvector.txt";
-    readArrayFromFile(filenameU, U);
-    printf("\n");
-    
+    // Read in matrix of most recent control inputs
+    readLastLines(filenameU, U, M, T);
+    //readLines(filenameU, U, ts, M, T);
+    //printArrayDouble(U,M,T);
+
     // In this case we only need to update the YBu matrix, not recreate it
     if (ts < T) {
       // Read in sensor data from file
-      // ***CHANGE THIS TO READ IN MOST RECENT LINE OF FILE ***
-      sprintf(filenameY, "y%u.txt", ts);
-      printf("filename Y is: %s\n", filenameY);
-      readArrayFromFile(filenameY, y);
+      readLastLines(filenameY, y, P, 1);
+      //readLines(filenameY, y, ts, P, 1);
       //printArrayDouble(y,1,P);
       
       // Update solver parameters CA and YBu
@@ -78,21 +78,22 @@ int main(int argc, char **argv) {
       printf("else case load data\n");
       // Loop through T timesteps
       for (size_t t = 0; t < T; ++t) {
-        sprintf(filenameY, "y%u.txt", ts);
-        printf("filename Y is: %s\n", filenameY);
-        readArrayFromFile(filenameY, y);
+        readLastLines(filenameY, y, P, 1);
+        //int tstart = ts-(T-1);
+        //readLines(filenameY, y, tstart+t, P, 1);
         //printArrayDouble(y,1,P);
         
-        // Create solver parameters YBu (CA does not change)
+        // Create solver parameter YBu
+        // (CA is already fully populated and does not change)
         load_YBu(t, y, U);
       }
     }
 
     // Print solver parameters
-    printf("Full CA matrix is (non-zero entries by T):\n");
-    printArrayDouble(params.CA, nonZeroEntries, T);
-    printf("Full YBu matrix is (P x T):\n");
-    printArrayDouble(params.YBu, P, T);
+    //printf("Full CA matrix is (non-zero entries by T):\n");
+    //printArrayDouble(params.CA, nonZeroEntries, T);
+    //printf("Full YBu matrix is (P x T):\n");
+    //printArrayDouble(params.YBu, P, T);
     
     // Solve optimization problem for initial state
     num_iters = solve();
@@ -121,16 +122,18 @@ int main(int argc, char **argv) {
   double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
   printf("Time to solve per timestep is is %.2f ms\n", time_spent/TT);
 
+/*
   printf("A is:\n");
   printArrayDouble(A,N,N);
   printf("B is:\n");
   printArrayDouble(B,N,M);
   printf("C is:\n");
   printArrayDouble(C,P,N);
-
+*/
+/*
 #ifndef ZERO_LIBRARY_MODE
 #if (NUMTESTS > 0)
-  /* Now solve multiple problem instances for timing purposes. */
+  // Now solve multiple problem instances for timing purposes.
   settings.verbose = 0;
   tic();
   for (i = 0; i < NUMTESTS; i++) {
@@ -148,6 +151,7 @@ int main(int argc, char **argv) {
   }
 #endif
 #endif
+*/
   return 0;
 }
 void load_CA(int timeStep) {

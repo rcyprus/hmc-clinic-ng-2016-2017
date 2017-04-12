@@ -310,7 +310,6 @@ void shiftArray(double * array, int width, int height){
             }
         }
     }
-
 }
 
 // Matlab

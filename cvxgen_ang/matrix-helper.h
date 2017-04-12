@@ -21,7 +21,7 @@ double dot(double* x, double* y, int len);
  */
 void add(double* x, double* y, int len, double* xplusy);
 
-void sub(double* x, double* y, int len, double* xminy); 
+void sub(double* x, double* y, int len, double* xminy);
 
 /*
  * Debugging print function (only 2D arrays)
@@ -47,6 +47,10 @@ char* doubleArrayToString(double* data, int length);
  * Read in 1D array from file (w/ comma delimiter) 
  */
 void readArrayFromFile(const char* file_name, double* array);
+
+//void readLines(const char* file_name, double* data, int startLine, int entriesPerLine, int numLines);
+void readLastLines(const char* file_name, double* data, int entriesPerLine, int numLines);
+void shiftArray(double * array, int width, int height);
 
 #endif
 

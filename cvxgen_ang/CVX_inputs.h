@@ -12,12 +12,8 @@
 #define T 10 // timesteps
 #define M 5 // inputs
 
+// Define sparsity
 #define nonZeroEntries 36
-
-//const int N = 10; // states
-//const int P = 38; // sensors
-//const int T = 3; // timesteps
-//const int M = 5; // inputs
 
 // Constant Matrices
 double A[N*N]; // nxn
@@ -26,12 +22,10 @@ double C[P*N]; // Pxn
 
 // Update contents after each timeStep
 double CA[P*T*N]; // PTxn
-double YBu[P*T]; // PTx1
-double U[M*T];
+double YBu[P*T];  // PTx1
+double U[M*T];    // MxT
+double Y[P*T];
 double y[P];
-
-// Store system state
-//double x[N];
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
