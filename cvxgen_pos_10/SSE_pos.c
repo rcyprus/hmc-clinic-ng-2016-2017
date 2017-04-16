@@ -75,8 +75,10 @@ int main(int argc, char **argv) {
       }
 
       // Read in matrix of most recent control inputs
-      readLines(filenameU, U, tstart, M, T);
-      printArrayDouble(U,M,T);
+      //readLines(filenameU, U, tstart, M, T);
+      shiftArray(U, M, T);
+      readLines(filenameU, &U[(T-1)*M], tstart, M, 1);
+      //printArrayDouble(U,M,T);
 
       // Loop through T timesteps
       for (size_t t = 0; t < T; ++t) {
