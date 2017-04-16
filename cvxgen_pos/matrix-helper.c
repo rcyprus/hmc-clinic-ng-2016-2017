@@ -147,7 +147,9 @@ char* doubleArrayToString(double data[], int length){
     // +1 for zero terminator
     // MUST FREE LATER!!!!!
     char* outputString = malloc((bufSize + 3)*length+1);
+    *outputString = '\0';
 
+    //printf("outputString is: %s\n", outputString);
     // Loop through, converting each elemetn to a string, and concatenating
     // to output string
     for(i = 0; i < length; ++i){

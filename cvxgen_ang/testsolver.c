@@ -17,13 +17,13 @@ Workspace work;
 Settings settings;
 //#define NUMTESTS 0
 
-// Add declaration for load_data because C is upset
+// Add declarations for load_CA and load_YBu
 void load_CA(int timeStep);
 void load_YBu(int timeStep, double* yin, double* Uin);
 
 int main(int argc, char **argv) {
-/*
   int num_iters;
+/*
 #if (NUMTESTS > 0)
   int i;
   double time;
@@ -53,19 +53,17 @@ int main(int argc, char **argv) {
   clock_t begin = clock();
   
   // *** CHANGE THIS TO A WHILE LOOP IN FINAL VERSION ***
-  const size_t TT = 10;
+  const size_t TT = 20;
   for (size_t ts = 0; ts < TT; ++ts) {
     
     // Read in matrix of most recent control inputs
-    readLastLines(filenameU, U, M, T);
-    //readLines(filenameU, U, ts, M, T);
-    //printArrayDouble(U,M,T);
-
+    readLines(filenameU, U, ts, M, T);
+    printArrayDouble(U,M,T);
+    
     // In this case we only need to update the YBu matrix, not recreate it
     if (ts < T) {
       // Read in sensor data from file
-      readLastLines(filenameY, y, P, 1);
-      //readLines(filenameY, y, ts, P, 1);
+      readLines(filenameY, y, ts, P, 1);
       //printArrayDouble(y,1,P);
       
       // Update solver parameters CA and YBu
@@ -78,9 +76,8 @@ int main(int argc, char **argv) {
       printf("else case load data\n");
       // Loop through T timesteps
       for (size_t t = 0; t < T; ++t) {
-        readLastLines(filenameY, y, P, 1);
-        //int tstart = ts-(T-1);
-        //readLines(filenameY, y, tstart+t, P, 1);
+        int tstart = ts-(T-1);
+        readLines(filenameY, y, tstart+t, P, 1);
         //printArrayDouble(y,1,P);
         
         // Create solver parameter YBu
