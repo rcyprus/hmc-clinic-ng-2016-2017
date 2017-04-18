@@ -11,16 +11,102 @@
 #include "solver.h"
 #include <time.h>
 
+#include "ros/ros.h"
+#include "beginner_tutorials/SensorData.h"
+#include "geometry_msgs/Quaternion.h"
+#include "geometry_msgs/Point.h"
+
 Vars vars;
 Params params;
 Workspace work;
 Settings settings;
 
+struct quaternions{
+  double qx;
+  double qy;
+  double qz;
+  double qw;
+};
+
+bool newData = false;
+double ang[6*4] = {};
+
 // Add declarations for load_CA and load_YBu
 void load_CA(int timeStep);
 void load_YBu(int timeStep, double* yin, double* Uin);
+void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg);
+quaternions toQuaternions(double roll, double pitch, double yaw);
+
+
+void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
+{
+  // Set flag
+  newData = true;
+
+  ROS_INFO("SSE got new ang data");
+  /*
+  pos[0] = msg->laser0_min_dist;
+  pos[1] = msg->laser1_min_dist;
+  pos[2] = msg->imu1_vel_x;
+  pos[3] = msg->imu1_vel_y;
+  pos[4] = msg->vz_1;
+  pos[5] = msg->imu2_vel_x;
+  pos[6] = msg->imu2_vel_y;
+  pos[7] = msg->vz_2;
+  pos[8] = msg->imu3_vel_x;
+  pos[9] = msg->imu3_vel_y;
+  pos[10] = msg->vz_3;
+  pos[11] = msg->imu4_vel_x;
+  pos[12] = msg->imu4_vel_y;
+  pos[13] = msg->vz_4;
+  */
+  ang[0] = msg->imu1_roll;
+  ang[1] = msg->imu1_pitch;
+  ang[2] = msg->imu1_yaw;
+  ang[3] = msg->imu1_ang_x;
+  ang[4] = msg->imu1_ang_y;
+  ang[5] = msg->imu1_ang_z;
+
+  ang[6] = msg->imu2_roll;
+  ang[7] = msg->imu2_pitch;
+  ang[8] = msg->imu2_yaw;
+  ang[9] = msg->imu2_ang_x;
+  ang[10] = msg->imu2_ang_y;
+  ang[11] = msg->imu2_ang_z;
+
+  ang[12] = msg->imu3_roll;
+  ang[13] = msg->imu3_pitch;
+  ang[14] = msg->imu3_yaw;
+  ang[15] = msg->imu3_ang_x;
+  ang[16] = msg->imu3_ang_y;
+  ang[17] = msg->imu3_ang_z;
+
+  ang[18] = msg->imu4_roll;
+  ang[19] = msg->imu4_pitch;
+  ang[20] = msg->imu4_yaw;
+  ang[21] = msg->imu4_ang_x;
+  ang[22] = msg->imu4_ang_y;
+  ang[23] = msg->imu4_ang_z;
+}
+
 
 int main(int argc, char **argv) {
+  // Setup ROS stuff
+  ROS_INFO("Starting Ang SSE");
+  ros::init(argc,argv,"AngSSE");
+  ros::NodeHandle n;
+
+  ros::Subscriber sensorData = n.subscribe("sensor_data", 100, sensorDataCallback);
+  ros::Publisher angStates = n.advertise<geometry_msgs::Quaternion>("ang_states",100);
+  // ros::Publisher posStats = n.advertise<geometry_msgs::Point>("pos_states",100);
+  
+  ros::Rate loop_rate(100); // 100 Hz
+
+  // Initialize message
+  geometry_msgs::Quaternion orientation;
+
+
+
   // CVX setup
   set_defaults();
   setup_indexing();
@@ -138,6 +224,8 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+
+
 void load_CA(int timeStep) {
   // Set up CVX parameter matrix CA
   updateCA(timeStep);
@@ -154,4 +242,32 @@ void load_YBu(int timeStep, double* yin, double* Uin) {
     params.YBu[i] = YBu[i];
   }
   //printArrayDouble(params.YBu,P,T);
+}
+
+/**
+ * @brief      convert Euler to Quaternion angles
+ *
+ * @param[in]  roll   
+ * @param[in]  pitch  
+ * @param[in]  yaw    
+ *
+ * @return     returns a struct of quaternion angles
+ * source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+ */
+quaternions toQuaternions(double roll, double pitch, double yaw)
+{
+  quaternions q;
+
+  double t0 = std::cos(yaw * 0.5);
+  double t1 = std::sin(yaw * 0.5);
+  double t2 = std::cos(roll * 0.5);
+  double t3 = std::sin(roll * 0.5);
+  double t4 = std::cos(pitch * 0.5);
+  double t5 = std::sin(pitch * 0.5);
+
+  q.qw = t0 * t2 * t4 + t1 * t3 * t5;
+  q.qx = t0 * t3 * t4 - t1 * t2 * t5;
+  q.qy = t0 * t2 * t5 + t1 * t3 * t4;
+  q.qz = t1 * t2 * t4 - t0 * t3 * t5;
+  return q;
 }
