@@ -147,19 +147,7 @@ int main(int argc, char **argv) {
       x[1] = x_prev[1] + ax*dt;
       x[2] = x_prev[2] + ay*dt;
       x[3] = x_prev[3] + az*dt;
-
-      // Approximate angular accelerations and calculate new orientation/
-      // angular velocities
-      int alphax = (x_prev[7] - x_pprev[7])/dt;
-      int alphay = (x_prev[8] - x_pprev[8])/dt;
-      int alphaz = (x_prev[9] - x_pprev[9])/dt;
-      x[4] = x_prev[4] + x_prev[7]*dt + 0.5*alphax*dt*dt;
-      x[5] = x_prev[5] + x_prev[8]*dt + 0.5*alphay*dt*dt;
-      x[6] = x_prev[6] + x_prev[9]*dt + 0.5*alphaz*dt*dt;
-      x[7] = x_prev[7] + alphax*dt;
-      x[8] = x_prev[8] + alphay*dt;
-      x[9] = x_prev[9] + alphaz*dt;
-
+      
       // Copy former x_prev into x_pprev
       for (size_t i = 0; i < N; ++i) {
         x_pprev[i] = x_prev[i];
