@@ -4,6 +4,10 @@
 /* CVXGEN, or solvers produced by CVXGEN, cannot be used for commercial */
 /* applications without prior written permission from Jacob Mattingley. */
 
+#ifdef __cplusplus
+    extern"C" {
+#endif
+
 /* Filename: solver.h. */
 /* Description: Header file with relevant definitions. */
 #ifndef SOLVER_H
@@ -134,3 +138,8 @@ double randn(void);
 void reset_rand(void);
 
 #endif
+
+#ifdef __cplusplus
+    }
+#endif
+

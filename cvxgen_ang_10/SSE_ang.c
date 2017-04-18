@@ -6,20 +6,23 @@
 
 /* Filename: testsolver.c. */
 /* Description: Basic test harness for solver.c. */
-
-#include "CVX_inputs.h"
-#include "solver.h"
-#include <time.h>
+extern "C" {
+  #include "CVX_inputs.h"
+  #include "solver.h"
+  #include <time.h>
+}
 
 #include "ros/ros.h"
 #include "beginner_tutorials/SensorData.h"
 #include "geometry_msgs/Quaternion.h"
-#include "geometry_msgs/Point.h"
 
 Vars vars;
 Params params;
 Workspace work;
 Settings settings;
+
+// Define C functions
+
 
 struct quaternions{
   double qx;
@@ -28,8 +31,13 @@ struct quaternions{
   double qw;
 };
 
+// Define some global variables
 bool newData = false;
-double ang[6*4] = {};
+double ang[24] = {}; // 4*6
+// timing
+int lastTime = 0;
+int curTime = 0;
+double dt = 0;
 
 // Add declarations for load_CA and load_YBu
 void load_CA(int timeStep);
@@ -44,22 +52,7 @@ void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
   newData = true;
 
   ROS_INFO("SSE got new ang data");
-  /*
-  pos[0] = msg->laser0_min_dist;
-  pos[1] = msg->laser1_min_dist;
-  pos[2] = msg->imu1_vel_x;
-  pos[3] = msg->imu1_vel_y;
-  pos[4] = msg->vz_1;
-  pos[5] = msg->imu2_vel_x;
-  pos[6] = msg->imu2_vel_y;
-  pos[7] = msg->vz_2;
-  pos[8] = msg->imu3_vel_x;
-  pos[9] = msg->imu3_vel_y;
-  pos[10] = msg->vz_3;
-  pos[11] = msg->imu4_vel_x;
-  pos[12] = msg->imu4_vel_y;
-  pos[13] = msg->vz_4;
-  */
+
   ang[0] = msg->imu1_roll;
   ang[1] = msg->imu1_pitch;
   ang[2] = msg->imu1_yaw;
@@ -87,11 +80,22 @@ void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
   ang[21] = msg->imu4_ang_x;
   ang[22] = msg->imu4_ang_y;
   ang[23] = msg->imu4_ang_z;
+
+  u[0] = msg->u1;
+  u[1] = msg->u2;
+  u[2] = msg->u3;
+  u[3] = msg->u4;
+  u[4] = 9.81; // Gravity
+
+  // Time
+  lastTime = curTime;
+  curTime = msg->header.stamp.nsec;
+  dt = ((curTime - lastTime) % (int)pow(10,9) ) * pow(10,-9);
 }
 
 
 int main(int argc, char **argv) {
-  // Setup ROS stuff
+// Setup ROS stuff
   ROS_INFO("Starting Ang SSE");
   ros::init(argc,argv,"AngSSE");
   ros::NodeHandle n;
@@ -104,10 +108,10 @@ int main(int argc, char **argv) {
 
   // Initialize message
   geometry_msgs::Quaternion orientation;
+  quaternions angles;
 
 
-
-  // CVX setup
+// CVX setup
   set_defaults();
   setup_indexing();
   settings.verbose = 1;
@@ -119,29 +123,33 @@ int main(int argc, char **argv) {
   readArrayFromFile(filenameA, A);
   readArrayFromFile(filenameB, B);
   readArrayFromFile(filenameC, C);
-  
-  // Create string to store y filename
-  const char* filenameY = "Ymatrix.txt";
-  const char* filenameU = "Umatrix.txt";
-  char filenameX[6];
+
+  // // Create string to store y filename
+  // const char* filenameY = "Ymatrix.txt";
+  // const char* filenameU = "Umatrix.txt";
+  // char filenameX[6];
   
   // START TIMING
-  clock_t begin = clock();
-  
-  // *** CHANGE THIS TO A WHILE LOOP IN FINAL VERSION ***
-  const size_t TT = 20;
-  for (size_t ts = 0; ts < TT; ++ts) {
+  // clock_t begin = clock();
+
+  size_t ts = 0;
+
+  while(ros::ok){ 
     printf("Current timestep is: %d\n", ts);
 
-    if (flag) {
+    if (newData) {
       // In this case we only need to update the YBu matrix, not recreate it
       if (ts < T) {
         // Read in matrix of most recent control inputs
-        readLines(filenameU, U, 0, M, T);
+        // readLines(filenameU, U, 0, M, T);
+        for(size_t i = 0; i < M; ++i){
+          U[ts*M + i] = u[i];
+        }
         printArrayDouble(U,M,T);
 
         // Read in sensor data from file
         readLines(filenameY, y, ts, P, 1);
+        
         //printArrayDouble(y,1,P);
         
         // Update solver parameters CA and YBu
@@ -161,13 +169,19 @@ int main(int argc, char **argv) {
         }
 
         // Read in matrix of most recent control inputs
-        readLines(filenameU, U, tstart, M, T);
+        // readLines(filenameU, U, tstart, M, T);
+        for(size_t i = 0; i < P; ++i){
+          y[i] = pos[i];
+        }
         printArrayDouble(U,M,T);
 
         // Loop through T timesteps
         for (size_t t = 0; t < T; ++t) {
           
-          readLines(filenameY, y, tstart+t, P, 1);
+          // readLines(filenameY, y, tstart+t, P, 1);
+          for(size_t i = 0; i < P; ++i){
+            y[i] = pos[i];
+          }
           printArrayDouble(y,1,P);
 
           // Create solver parameter YBu
@@ -206,12 +220,14 @@ int main(int argc, char **argv) {
       printf("Optimized x AFTER dynamics propagation is:\n");
       printArrayDouble(x, N, 1);
       
-      // save output state x
-      sprintf(filenameX, "x%u.txt", ts);
-      writeFile(filenameX, x, N);
+      // // save output state x
+      // sprintf(filenameX, "x%u.txt", ts);
+      // writeFile(filenameX, x, N);
+
+      newData = false;
     }
     else {
-      dt;
+      // dt;
 
       // Copy old state x into x_prev
       for (size_t i = 0; i < N; ++i) {
@@ -236,12 +252,27 @@ int main(int argc, char **argv) {
       }
 
     }
+
+    // Create the message
+    angles = toQuaternions(x[0], x[1], x[2]);
+    orientation.x = angles.qx;
+    orientation.y = angles.qy;
+    orientation.z = angles.qz;
+    orientation.w = angles.qw;
+
+    // ROS publish message
+    angStates.publish(orientation);
+    ros::spinOnces();
+    loop_rate.sleep();
+
+    // Increment "time step"
+    ts++;
   }
   
-  // END TIMING
-  clock_t end = clock();
-  double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
-  printf("Time to solve per timestep is is %.2f ms\n", time_spent/TT);
+  // // END TIMING
+  // clock_t end = clock();
+  // double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
+  // printf("Time to solve per timestep is is %.2f ms\n", time_spent/TT);
 
 /*
   printf("A is:\n");

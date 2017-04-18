@@ -8,8 +8,8 @@
 ////////////////////////////
 
 // CVXgen sparse indicies
-static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1, 2};
-static int colInd[nonZeroEntries] = {1, 1, 2, 3, 4, 2, 3, 4, 2,  3,  4,  2,  3,  4, 4, 4};
+static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21};
+static int colInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 1, 2, 3,  4,  5,  6,  1,  2,  3,  4,  5,  6,  1,  2,  3,  4,  5,  6, 4, 5, 6, 4, 5, 6,  4,  5,  6,  4,  5,  6};
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
@@ -17,17 +17,17 @@ static int colInd[nonZeroEntries] = {1, 1, 2, 3, 4, 2, 3, 4, 2,  3,  4,  2,  3, 
  */
 void updateCA(int timeStep) {
   // Initialize intermediate array and output array
-  double tmpCA[P*N];
-  double AT[N*N];
+  double tmpCA[numSensors*numStates];
+  double AT[numStates*numStates];
 
   // Compute C*(A^T)
   power(timeStep, AT);
-  multiply(C, P, N, AT, N, N, tmpCA);
+  multiply(C, numSensors, numStates, AT, numStates, numStates, tmpCA);
 
   //printf("tmpCA is:\n");
   //printArrayDouble(tmpCA,P,N);
 
-  // Copy tmpCA into full CA matrix
+  // Copy tmpCA into full CA matrix (no sparsity)
   /*
   for (int i = 0; i < N; ++i) {
     for (int p = 0; p < P; ++p) {
@@ -41,14 +41,12 @@ void updateCA(int timeStep) {
   for (int i = 0; i < nonZeroEntries; ++i) {
     r = rowInd[i]-1; // Matlab/CVXgen indexes from 1
     c = colInd[i]-1;
-    //printf("r is %d and c is %d\n", r, c);
-    CA[i + nonZeroEntries*timeStep] = tmpCA[c*P + r];
+    CA[i + nonZeroEntries*timeStep] = tmpCA[c*numSensors + r];
   }
-  //printf("\n");
 
   // debugging
-  //printf("non-zero entries of CA are (each column is 1 timestep):\n");
-  //printArrayDouble(CA,nonZeroEntries,T);
+  //printf("CA is:\n");
+  //printArrayDouble(CA,P*T,N);
 }
 
 /* 
@@ -60,56 +58,50 @@ void updateCA(int timeStep) {
  */
 void updateYBu(int timeStep, double* yin, double* Uin) {
   // Initialize temporary arrays
-  double AT[N*N];
-  double CA[P*N];
-  double u[M]; 
-  double Bu[N];
-  double CABu[P*T];
-  double tmpYBu[P];
-  double tmpYBu2[P];
+  double AT[numStates*numStates];
+  double CA[numSensors*numStates];
+  double u[numInputs]; 
+  double Bu[numStates];
+  double CABu[numSensors*timeSteps];
+  double tmpYBu[numSensors];
+  double tmpYBu2[numSensors];
 
   // put sensor outputs into output matrix
-  for (size_t i = 0; i < P; ++i) {
+  for (size_t i = 0; i < numSensors; ++i) {
     tmpYBu[i] = yin[i];
-    //YBu[P*timeStep+i] = y[i];
   }
-  //printf("tmpYBu at the beginning is:\n");
-  //printArrayDouble(tmpYBu,P,1);
   
   // Sums previous inputs up through current timeStep
   for (size_t i = 0; i < timeStep; ++i) {
     // Grab necessary section of U
-    for (size_t j = 0; j < M; ++j) {
-      u[j] = Uin[ i*M + j];
+    for (size_t j = 0; j < numInputs; ++j) {
+      u[j] = Uin[ i*numInputs + j];
     }
 
     //printf("Timestep is %d\n",i);
-    //printArrayDouble(B,N,M);
-    //printArrayDouble(u,M,1);
+    //printArrayDouble(B,n,m);
+    //printArrayDouble(u,m,1);
 
     // Perform calculations
     power((timeStep-1)-i, AT);
-    //printArrayDouble(AT,N,N);
-    multiply(C,  P, N, AT, N, N, CA);
-    //printArrayDouble(CA,P,N);
-    
-    multiply(B,  N, M, u, M, 1, Bu);
-    //printArrayDouble(Bu,N,1);
-    multiply(CA, P, N, Bu, N, 1, CABu);
+    //printArrayDouble(AT,n,n);
+    multiply(C,  numSensors, numStates, AT, numStates, numStates, CA);
+    //printArrayDouble(CA,P,n);
+    multiply(B,  numStates, numInputs, u, numInputs, 1, Bu);
+    //printArrayDouble(Bu,n,1);
+    multiply(CA, numSensors, numStates, Bu, numStates, 1, CABu);
     //printArrayDouble(CABu,P,1);
-    sub(tmpYBu, CABu, P, tmpYBu2);
+    sub(tmpYBu, CABu, numSensors, tmpYBu2);
     //printArrayDouble(tmpYBu,P,1);
     
-    for (size_t j = 0; j < P; ++j) {
+    for (size_t j = 0; j < numSensors; ++j) {
       tmpYBu[j] = tmpYBu2[j];
     }
   }
-  //printf("tmpYBu at the end is:\n");
-  //printArrayDouble(tmpYBu,P,1);
   
   // Copy tmpYBu into full YBu matrix
-  for (size_t i = 0; i < P; ++i) {
-    YBu[P*timeStep+i] += tmpYBu[i];
+  for (size_t i = 0; i < numSensors; ++i) {
+    YBu[numSensors*timeStep+i] += tmpYBu[i];
   }
 }
 
@@ -119,23 +111,21 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
  */
 void propagateDynamics(int timeStep, double* Uin, double* x) {
   // Initialize temporary variables
-  double u[M];
-  double Ax[N];
-  double Bu[N];
+  double u[numInputs];
+  double Ax[numStates];
+  double Bu[numStates];
   
   // Loop through timesteps
   for (size_t t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
-    for (size_t j = 0; j < M; ++j) {
-      u[j] = Uin[M*t + j];
+    for (size_t j = 0; j < numInputs; ++j) {
+      u[j] = Uin[numInputs*t + j];
     }
 
     // Propagate system dynamics
-    multiply(A, N, N, x, N, 1, Ax);
-    multiply(B, N, M, u, M, 1, Bu);
-    add(Ax, Bu, N, x);
-    printf("At timestep %d, x is: ", t);
-    printArrayDouble(x,1,N);
+    multiply(A, numStates, numStates, x, numStates, 1, Ax);
+    multiply(B, numStates, numInputs, u, numInputs, 1, Bu);
+    add(Ax, Bu, numStates, x);
   }
 }
 
@@ -145,16 +135,16 @@ void propagateDynamics(int timeStep, double* Uin, double* x) {
  */
 void power(int t, double* AT) {
   // Create temporary matrix
-  double tmpAT[N*N];
+  double tmpAT[numStates*numStates];
 
   // Fill the output AT matrix with zeros
-  for (size_t i = 0; i < N*N; ++i) {
+  for (size_t i = 0; i < numStates*numStates; ++i) {
     AT[i] = 0;
   }
   
   // Make AT the identity matrix
-  for (size_t i = 0; i < N; ++i) {
-    AT[i*(N+1)] = 1;
+  for (size_t i = 0; i < numStates; ++i) {
+    AT[i*(numStates+1)] = 1;
   }
   
   // If t is zero we want to return the identity without doing multiplication
@@ -164,9 +154,9 @@ void power(int t, double* AT) {
   else {
     // Loop through the number of powers desired
     for (size_t i = 0; i < t; ++i) {
-      multiply(A, N, N, AT, N, N, tmpAT);
+      multiply(A, numStates, numStates, AT, numStates, numStates, tmpAT);
       // Copy tmpAT into AT
-      for (size_t j = 0; j < N*N; ++j) {
+      for (size_t j = 0; j < numStates*numStates; ++j) {
         AT[j] = tmpAT[j];
       }
     }
