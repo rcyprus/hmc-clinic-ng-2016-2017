@@ -1,31 +1,36 @@
 // inputs.h
 // Contains helper functions to create necessary inputs to quadrotor SSE
 
+#ifdef __cplusplus
+    extern"C" {
+#endif
+
 #include "matrix-helper.h"
 
 #ifndef INPUTS_H_INCLUDED
 #define INPUTS_H_INCLUDED 1
 
 // Define constants
-#define N 6 // states
-#define P 24 // sensors
-#define T 10 // timesteps
-#define M 5 // inputs
+#define numStates 6 // N = states
+#define numSensors 24 // P = sensors
+#define timeSteps 10 // T = timesteps
+#define numInputs 5 // M = inputs
 
 // Define sparsity
 #define nonZeroEntries 36
 
 // Constant Matrices
-double A[N*N]; // nxn
-double B[N*M]; // nxm
-double C[P*N]; // Pxn
+double A[numStates*numStates]; // nxn
+double B[numStates*numInputs]; // nxm
+double C[numSensors*numStates]; // Pxn
 
 // Update contents after each timeStep
-double CA[P*T*N]; // PTxn
-double YBu[P*T];  // PTx1
-double U[M*T];    // MxT
-double Y[P*T];
-double y[P];
+double CA[numSensors*timeSteps*numStates]; // PTxn
+double YBu[numSensors*timeSteps];  // PTx1
+double U[numInputs*timeSteps];    // MxT
+double Y[numSensors*timeSteps];
+double y[numSensors];
+double x[numStates]; // state vector
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
@@ -54,6 +59,11 @@ void propagateDynamics(int timeStep, double* U, double* x);
  */
 void power(int t, double* AT);
 
+#endif
+
+
+#ifdef __cplusplus
+    }
 #endif
 
 

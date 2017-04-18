@@ -8,8 +8,8 @@
 ////////////////////////////
 
 // CVXgen sparse indicies
-static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21};
-static int colInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 1, 2, 3,  4,  5,  6,  1,  2,  3,  4,  5,  6,  1,  2,  3,  4,  5,  6, 4, 5, 6, 4, 5, 6,  4,  5,  6,  4,  5,  6};
+static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1, 2};
+static int colInd[nonZeroEntries] = {1, 1, 2, 3, 4, 2, 3, 4, 2,  3,  4,  2,  3,  4, 4, 4};
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model

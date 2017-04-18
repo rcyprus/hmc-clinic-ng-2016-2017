@@ -11,13 +11,13 @@
 #define INPUTS_H_INCLUDED 1
 
 // Define constants
-#define numStates 6 // N = states
-#define numSensors 24 // P = sensors
+#define numStates 4 // N = states
+#define numSensors 14 // P = sensors
 #define timeSteps 10 // T = timesteps
 #define numInputs 5 // M = inputs
 
 // Define sparsity
-#define nonZeroEntries 36
+#define nonZeroEntries 16
 
 // Constant Matrices
 double A[numStates*numStates]; // nxn
