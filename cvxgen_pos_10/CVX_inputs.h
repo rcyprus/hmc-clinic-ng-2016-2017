@@ -20,9 +20,9 @@
 #define nonZeroEntries 16
 
 // Constant Matrices
-double A[numStates*numStates]; // nxn
-double B[numStates*numInputs]; // nxm
-double C[numSensors*numStates]; // Pxn
+double A[numStates*numStates] = {1,0,0,0,0,0.95123,0,0,0,0,0.95123,0,0.097541,0,0,0.95123}; // nxn
+double B[numStates*numInputs] = {2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,-0.0049177,0,0,-0.097541};  // nxm
+double C[numSensors*numStates] = {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1}; // Pxn
 
 // Update contents after each timeStep
 double CA[numSensors*timeSteps*numStates]; // PTxn

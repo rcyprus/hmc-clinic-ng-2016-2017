@@ -7,23 +7,35 @@
 /* Filename: testsolver.c. */
 /* Description: Basic test harness for solver.c. */
 
+
 #include "CVX_inputs.h"
 #include "solver.h"
-
 #include <time.h>
+
+
 #include "ros/ros.h"
-#include "beginner_tutorials/SensorData.h"
-#include "geometry_msgs/Point.h"
+#include "ang_sse/SensorData.h"
+#include "geometry_msgs/Quaternion.h"
+
 
 Vars vars;
 Params params;
 Workspace work;
 Settings settings;
 
+
+struct quaternions{
+  double qx;
+  double qy;
+  double qz;
+  double qw;
+};
+
 // Define some global variables
 bool newData = false;
-double pos[numSensors] = {};
-double u[numInputs]    = {};
+double ang[numSensors] = {};
+double u[numInputs] = {};
+
 // timing
 int lastTime = 0;
 int curTime = 0;
@@ -32,32 +44,44 @@ double dt = 0;
 // Add declarations for load_CA and load_YBu
 void load_CA(int timeStep);
 void load_YBu(int timeStep, double* yin, double* Uin);
-void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg);
+void sensorDataCallback(const ang_sse::SensorData::ConstPtr& msg);
+quaternions toQuaternions(double roll, double pitch, double yaw);
 
-// Define C fucntions
-extern "C" void readArrayFromFile(const char* file_name, double* array);
 
-void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
+void sensorDataCallback(const ang_sse::SensorData::ConstPtr& msg)
 {
   // Set flag
   newData = true;
 
-  ROS_INFO("SSE got new pos data");
-  
-  pos[0] = msg->laser0_min_dist;
-  pos[1] = msg->laser1_min_dist;
-  pos[2] = msg->imu1_vel_x;
-  pos[3] = msg->imu1_vel_y;
-  pos[4] = msg->vz_1;
-  pos[5] = msg->imu2_vel_x;
-  pos[6] = msg->imu2_vel_y;
-  pos[7] = msg->vz_2;
-  pos[8] = msg->imu3_vel_x;
-  pos[9] = msg->imu3_vel_y;
-  pos[10] = msg->vz_3;
-  pos[11] = msg->imu4_vel_x;
-  pos[12] = msg->imu4_vel_y;
-  pos[13] = msg->vz_4;
+  ROS_INFO("SSE got new ang data");
+
+  ang[0] = msg->imu1_roll;
+  ang[1] = msg->imu1_pitch;
+  ang[2] = msg->imu1_yaw;
+  ang[3] = msg->imu1_ang_x;
+  ang[4] = msg->imu1_ang_y;
+  ang[5] = msg->imu1_ang_z;
+
+  ang[6] = msg->imu2_roll;
+  ang[7] = msg->imu2_pitch;
+  ang[8] = msg->imu2_yaw;
+  ang[9] = msg->imu2_ang_x;
+  ang[10] = msg->imu2_ang_y;
+  ang[11] = msg->imu2_ang_z;
+
+  ang[12] = msg->imu3_roll;
+  ang[13] = msg->imu3_pitch;
+  ang[14] = msg->imu3_yaw;
+  ang[15] = msg->imu3_ang_x;
+  ang[16] = msg->imu3_ang_y;
+  ang[17] = msg->imu3_ang_z;
+
+  ang[18] = msg->imu4_roll;
+  ang[19] = msg->imu4_pitch;
+  ang[20] = msg->imu4_yaw;
+  ang[21] = msg->imu4_ang_x;
+  ang[22] = msg->imu4_ang_y;
+  ang[23] = msg->imu4_ang_z;
 
   u[0] = msg->u1;
   u[1] = msg->u2;
@@ -71,21 +95,26 @@ void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
   dt = ((curTime - lastTime) % (int)pow(10,9) ) * pow(10,-9);
 }
 
+
 int main(int argc, char **argv) {
-  // Setup ROS stuff
-  ROS_INFO("Starting Pos SSE");
-  ros::init(argc,argv,"PosSSE");
+// Setup ROS stuff
+  ROS_INFO("Starting Ang SSE");
+  ros::init(argc,argv,"AngSSE");
   ros::NodeHandle n;
 
   ros::Subscriber sensorData = n.subscribe("sensor_data", 100, sensorDataCallback);
-  ros::Publisher posStates = n.advertise<geometry_msgs::Point>("pos_states",100);
+  ros::Publisher angStates = n.advertise<geometry_msgs::Quaternion>("ang_states",100);
   
   ros::Rate loop_rate(100); // 100 Hz
 
   // Initialize message
-  geometry_msgs::Point position;
+  geometry_msgs::Quaternion orientation;
+  quaternions angles;
 
-  // CVX setup
+  size_t ts = 0;
+
+
+// CVX setup
   set_defaults();
   setup_indexing();
   settings.verbose = 1;
@@ -106,36 +135,37 @@ int main(int argc, char **argv) {
   // printf("\n");
   // printArrayDouble(C,numSensors,numStates);
   // printf("\n");
-  
 
   double x_prev[numStates];
   double x_pprev[numStates];
   
-  // // START TIMING
-  // clock_t begin = clock();
-  
-  // *** CHANGE THIS TO A WHILE LOOP IN FINAL VERSION ***
-  //for (size_t ts = 0; ts < timeSteps; ++ts) {
-  
-  size_t ts = 0;
 
-  while(ros::ok){
-    // ROS_INFO("In While Loop, %d",ts);
+  // // Create string to store y filename
+  // const char* filenameY = "Ymatrix.txt";
+  // const char* filenameU = "Umatrix.txt";
+  // char filenameX[6];
+  
+  // START TIMING
+  // clock_t begin = clock();
+
+
+  while(ros::ok){ 
+    // ROS_INFO("Ang_sse while loop %d",ts);
 
     if (newData) {
       // In this case we only need to update the YBu matrix, not recreate it
       if (ts < timeSteps) {
         // Read in matrix of most recent control inputs
-        // readLines(filenameU, &U[ts*numInputs], ts, numInputs, 1);
-        for (size_t i = 0; i < numInputs; ++i) {
+        // readLines(filenameU, U, 0, numInputs, timeSteps);
+        for(size_t i = 0; i < numInputs; ++i){
           U[ts*numInputs + i] = u[i];
         }
-        // printArrayDouble(U,numInputs,timeSteps);
+        printArrayDouble(U,numInputs,timeSteps);
 
         // Read in sensor data from file
         // readLines(filenameY, y, ts, numSensors, 1);
         for(size_t i = 0; i < numSensors; ++i){
-          y[i] = pos[i];
+          y[i] = ang[i];
         }
         //printArrayDouble(y,1,numSensors);
         
@@ -146,7 +176,7 @@ int main(int argc, char **argv) {
       
       // Here we need to recreate the entire YBu matrix
       else {
-        ROS_INFO("Windowing load data\n");
+        printf("Windowing load data\n");
         
         int tstart = ts-(timeSteps-1);
 
@@ -156,20 +186,18 @@ int main(int argc, char **argv) {
         }
 
         // Read in matrix of most recent control inputs
-        //readLines(filenameU, U, tstart, numInputs, timeSteps);
-        shiftArray(U, numInputs, timeSteps);
-        // readLines(filenameU, &U[(timeSteps-1)*numInputs], tstart, numInputs, 1);
-        for(size_t i = 0; i < numInputs; ++i){
-          U[(timeSteps-1)*numInputs + i] = u[i];
+        // readLines(filenameU, U, tstart, numInputs, numInputs);
+        for(size_t i = 0; i < numSensors; ++i){
+          y[i] = ang[i];
         }
-        //printArrayDouble(U,numInputs,timeSteps);
+        printArrayDouble(U,numInputs,timeSteps);
 
         // Loop through T timesteps
         for (size_t t = 0; t < timeSteps; ++t) {
           
           // readLines(filenameY, y, tstart+t, numSensors, 1);
           for(size_t i = 0; i < numSensors; ++i){
-            y[i] = pos[i];
+            y[i] = ang[i];
           }
           printArrayDouble(y,1,numSensors);
 
@@ -178,20 +206,20 @@ int main(int argc, char **argv) {
           load_YBu(t, y, U);
         }
 
-        ROS_INFO("Full YBu matrix is (P x T):\n");
+        printf("Full YBu matrix is (numSensors x numInputs):\n");
         printArrayDouble(params.YBu, numSensors, timeSteps);
       }
       
-      // Print solver parameters
-      //printf("Full CA matrix is (non-zero entries by T):\n");
-      //printArrayDouble(params.CA, nonZeroEntries, timeSteps);
-      //printf("Full YBu matrix is (numSensors x T):\n");
-      //printArrayDouble(params.YBu, numSensors, timeSteps);
+      // numSensorsrint solver parameters
+      //printf("Full CA matrix is (non-zero entries by numInputs):\n");
+      //printArrayDouble(params.CA, nonZeroEntries, numInputs);
+      //printf("Full YBu matrix is (numSensors x numInputs):\n");
+      //printArrayDouble(params.YBu, numSensors, numInputs);
       
       // Solve optimization problem for initial state
       solve();
       
-      ROS_INFO("Optimized x BEFORE dynamics propagation is:");
+      printf("\nOptimized x BEFORE dynamics propagation is:\n");
       printArrayDouble(vars.x, numStates, 1);
 
       for (size_t i = 0; i < numStates; ++i) {
@@ -214,6 +242,9 @@ int main(int argc, char **argv) {
       // writeFile(filenameX, x, numStates);
 
       newData = false;
+
+      ROS_INFO("roll: %lf\t pitch: %lf\t yaw: %lf", x[0],x[1],x[2]);
+
     }
     else {
       // dt;
@@ -223,15 +254,28 @@ int main(int argc, char **argv) {
         x_prev[i] = x[i];
       }
 
-      // Approximate linear accelerations and calculate new position/velocity
-      int ax = (x_prev[1] - x_pprev[1])/dt;
-      int ay = (x_prev[2] - x_pprev[2])/dt;
-      int az = (x_prev[3] - x_pprev[3])/dt;
-      x[0] = x_prev[0] + x_prev[3]*dt + 0.5*az*dt*dt;
-      x[1] = x_prev[1] + ax*dt;
-      x[2] = x_prev[2] + ay*dt;
-      x[3] = x_prev[3] + az*dt;
-      
+      // // Approximate angular accelerations and calculate new orientation/
+      // // angular velocities
+      // int alphax = (x_prev[7] - x_pprev[7])/dt;
+      // int alphay = (x_prev[8] - x_pprev[8])/dt;
+      // int alphaz = (x_prev[9] - x_pprev[9])/dt;
+      // x[4] = x_prev[4] + x_prev[7]*dt + 0.5*alphax*dt*dt;
+      // x[5] = x_prev[5] + x_prev[8]*dt + 0.5*alphay*dt*dt;
+      // x[6] = x_prev[6] + x_prev[9]*dt + 0.5*alphaz*dt*dt;
+      // x[7] = x_prev[7] + alphax*dt;
+      // x[8] = x_prev[8] + alphay*dt;
+      // x[9] = x_prev[9] + alphaz*dt;
+
+      double alphax = (x_prev[3] - x_pprev[3])/dt;
+      double alphay = (x_prev[4] - x_pprev[4])/dt;
+      double alphaz = (x_prev[5] - x_pprev[5])/dt;
+      x[0] = x_prev[0] + x_prev[3]*dt + 0.5*alphax*dt*dt;
+      x[1] = x_prev[1] + x_prev[4]*dt + 0.5*alphay*dt*dt;
+      x[2] = x_prev[2] + x_prev[5]*dt + 0.5*alphaz*dt*dt;
+      x[3] = x_prev[3] + alphax*dt;
+      x[4] = x_prev[4] + alphay*dt;
+      x[5] = x_prev[5] + alphaz*dt;
+
       // Copy former x_prev into x_pprev
       for (size_t i = 0; i < numStates; ++i) {
         x_pprev[i] = x_prev[i];
@@ -239,25 +283,27 @@ int main(int argc, char **argv) {
 
     }
 
-    // Create ROS message
-    position.x = 0;
-    position.y = 0;
-    position.z = x[0];
+
+    // Create the message
+    angles = toQuaternions(x[0], x[1], x[2]);
+    orientation.x = angles.qx;
+    orientation.y = angles.qy;
+    orientation.z = angles.qz;
+    orientation.w = angles.qw;
 
     // ROS publish message
-    posStates.publish(position);
+    angStates.publish(orientation);
     ros::spinOnce();
     loop_rate.sleep();
 
-
-    // Increment "time step"s
+    // Increment "time step"
     ts++;
   }
   
-  // // END TIMING
+  // END TIMING
   // clock_t end = clock();
-  // double time_spent = (double) (end - begin) / CLOCKS_PER_SEC * 1000;
-  // printf("Time to solve per timestep is is %.2f ms\n", time_spent/T);
+  // double time_spent = (double) (end - begin) / CLOCKS_numSensorsER_SEC * 1000;
+  // printf("Time to solve per timestep is is %.2f ms\n", time_spent/timeSteps);
 
 /*
   printf("A is:\n");
@@ -271,13 +317,15 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+
+
 void load_CA(int timeStep) {
   // Set up CVX parameter matrix CA
   updateCA(timeStep);
   for (size_t i = 0; i < nonZeroEntries*timeSteps; ++i) {
     params.CA[i] = CA[i];
   }
-  //printArrayDouble(params.CA,nonZeroEntries,timeSteps);
+  //printArrayDouble(params.CA,nonZeroEntries,numInputs);
 }
 
 void load_YBu(int timeStep, double* yin, double* Uin) {
@@ -286,5 +334,33 @@ void load_YBu(int timeStep, double* yin, double* Uin) {
   for (size_t i = 0; i < numSensors*timeSteps; ++i) {
     params.YBu[i] = YBu[i];
   }
-  //printArrayDouble(params.YBu,numSensors,timeSteps);
+  //printArrayDouble(params.YBu,numSensors,numInputs);
+}
+
+/**
+ * @brief      convert Euler to Quaternion angles
+ *
+ * @param[in]  roll   
+ * @param[in]  pitch  
+ * @param[in]  yaw    
+ *
+ * @return     returns a struct of quaternion angles
+ * source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+ */
+quaternions toQuaternions(double roll, double pitch, double yaw)
+{
+  quaternions q;
+
+  double t0 = std::cos(yaw * 0.5);
+  double t1 = std::sin(yaw * 0.5);
+  double t2 = std::cos(roll * 0.5);
+  double t3 = std::sin(roll * 0.5);
+  double t4 = std::cos(pitch * 0.5);
+  double t5 = std::sin(pitch * 0.5);
+
+  q.qw = t0 * t2 * t4 + t1 * t3 * t5;
+  q.qx = t0 * t3 * t4 - t1 * t2 * t5;
+  q.qy = t0 * t2 * t5 + t1 * t3 * t4;
+  q.qz = t1 * t2 * t4 - t0 * t3 * t5;
+  return q;
 }

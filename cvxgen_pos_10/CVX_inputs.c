@@ -38,7 +38,8 @@ void updateCA(int timeStep) {
   */
   int r = 0;
   int c = 0;
-  for (int i = 0; i < nonZeroEntries; ++i) {
+  int i = 0;
+  for (i = 0; i < nonZeroEntries; ++i) {
     r = rowInd[i]-1; // Matlab/CVXgen indexes from 1
     c = colInd[i]-1;
     CA[i + nonZeroEntries*timeStep] = tmpCA[c*numSensors + r];
@@ -66,15 +67,17 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
   double tmpYBu[numSensors];
   double tmpYBu2[numSensors];
 
+  size_t i;
+  size_t j;
   // put sensor outputs into output matrix
-  for (size_t i = 0; i < numSensors; ++i) {
+  for (i = 0; i < numSensors; ++i) {
     tmpYBu[i] = yin[i];
   }
   
   // Sums previous inputs up through current timeStep
-  for (size_t i = 0; i < timeStep; ++i) {
+  for (i = 0; i < timeStep; ++i) {
     // Grab necessary section of U
-    for (size_t j = 0; j < numInputs; ++j) {
+    for (j = 0; j < numInputs; ++j) {
       u[j] = Uin[ i*numInputs + j];
     }
 
@@ -94,13 +97,13 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
     sub(tmpYBu, CABu, numSensors, tmpYBu2);
     //printArrayDouble(tmpYBu,P,1);
     
-    for (size_t j = 0; j < numSensors; ++j) {
+    for (j = 0; j < numSensors; ++j) {
       tmpYBu[j] = tmpYBu2[j];
     }
   }
   
   // Copy tmpYBu into full YBu matrix
-  for (size_t i = 0; i < numSensors; ++i) {
+  for (i = 0; i < numSensors; ++i) {
     YBu[numSensors*timeStep+i] += tmpYBu[i];
   }
 }
@@ -115,10 +118,12 @@ void propagateDynamics(int timeStep, double* Uin, double* x) {
   double Ax[numStates];
   double Bu[numStates];
   
+  size_t t;
+  size_t j;
   // Loop through timesteps
-  for (size_t t = 0; t < timeStep; ++t) {
+  for (t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
-    for (size_t j = 0; j < numInputs; ++j) {
+    for (j = 0; j < numInputs; ++j) {
       u[j] = Uin[numInputs*t + j];
     }
 
@@ -137,13 +142,15 @@ void power(int t, double* AT) {
   // Create temporary matrix
   double tmpAT[numStates*numStates];
 
+  size_t i;
+  size_t j;
   // Fill the output AT matrix with zeros
-  for (size_t i = 0; i < numStates*numStates; ++i) {
+  for (i = 0; i < numStates*numStates; ++i) {
     AT[i] = 0;
   }
   
   // Make AT the identity matrix
-  for (size_t i = 0; i < numStates; ++i) {
+  for (i = 0; i < numStates; ++i) {
     AT[i*(numStates+1)] = 1;
   }
   
@@ -153,10 +160,10 @@ void power(int t, double* AT) {
   }
   else {
     // Loop through the number of powers desired
-    for (size_t i = 0; i < t; ++i) {
+    for (i = 0; i < t; ++i) {
       multiply(A, numStates, numStates, AT, numStates, numStates, tmpAT);
       // Copy tmpAT into AT
-      for (size_t j = 0; j < numStates*numStates; ++j) {
+      for (j = 0; j < numStates*numStates; ++j) {
         AT[j] = tmpAT[j];
       }
     }
