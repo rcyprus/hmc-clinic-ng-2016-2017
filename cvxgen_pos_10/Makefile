@@ -13,9 +13,9 @@ LDLIBS = -lm
 CFLAGS = $(OPT) $(INCLUDES)
 CC = gcc
 .PHONY: all
-all: testsolver SSE_pos
+all: testsolver SSE_pos_offboard
 testsolver: solver.o matrix_support.o ldl.o testsolver.o util.o CVX_inputs.o matrix-helper.o
-SSE_pos: solver.o matrix_support.o ldl.o SSE_pos.o util.o CVX_inputs.o matrix-helper.o
+SSE_pos_offboard: solver.o matrix_support.o ldl.o SSE_pos_offboard.o util.o CVX_inputs.o matrix-helper.o
 # Include util.o for random functions and easy matrix printing.
 #testsolver: solver.o matrix_support.o ldl.o util.o testsolver.o
 CVX_inputs.o: CVX_inputs.c CVX_inputs.h
@@ -25,7 +25,7 @@ matrix_support.o: solver.h
 ldl.o: solver.h
 util.o: solver.h
 testsolver.o: solver.h CVX_inputs.h matrix-helper.h
-SSE_pos.o: solver.h CVX_inputs.h matrix-helper.h
+SSE_pos_offboard.o: solver.h CVX_inputs.h matrix-helper.h
 .PHONY : clean
 clean :
 	del *.o testsolver
