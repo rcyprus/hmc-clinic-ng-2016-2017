@@ -17,12 +17,12 @@ static int colInd[nonZeroEntries] = {1, 1, 2, 3, 4, 2, 3, 4, 2,  3,  4,  2,  3, 
  */
 void updateCA(int timeStep) {
   // Initialize intermediate array and output array
-  double tmpCA[numSensors*numStates];
-  double AT[numStates*numStates];
+  double tmpCA[P*N];
+  double AT[N*N];
 
   // Compute C*(A^T)
   power(timeStep, AT);
-  multiply(C, numSensors, numStates, AT, numStates, numStates, tmpCA);
+  multiply(C, P, N, AT, N, N, tmpCA);
 
   //printf("tmpCA is:\n");
   //printArrayDouble(tmpCA,P,N);
@@ -42,7 +42,7 @@ void updateCA(int timeStep) {
   for (i = 0; i < nonZeroEntries; ++i) {
     r = rowInd[i]-1; // Matlab/CVXgen indexes from 1
     c = colInd[i]-1;
-    CA[i + nonZeroEntries*timeStep] = tmpCA[c*numSensors + r];
+    CA[i + nonZeroEntries*timeStep] = tmpCA[c*P + r];
   }
 
   // debugging
@@ -59,26 +59,26 @@ void updateCA(int timeStep) {
  */
 void updateYBu(int timeStep, double* yin, double* Uin) {
   // Initialize temporary arrays
-  double AT[numStates*numStates];
-  double CA[numSensors*numStates];
-  double u[numInputs]; 
-  double Bu[numStates];
-  double CABu[numSensors*timeSteps];
-  double tmpYBu[numSensors];
-  double tmpYBu2[numSensors];
+  double AT[N*N];
+  double CA[P*N];
+  double u[M]; 
+  double Bu[N];
+  double CABu[P*T];
+  double tmpYBu[P];
+  double tmpYBu2[P];
 
   size_t i;
   size_t j;
   // put sensor outputs into output matrix
-  for (i = 0; i < numSensors; ++i) {
+  for (i = 0; i < P; ++i) {
     tmpYBu[i] = yin[i];
   }
   
   // Sums previous inputs up through current timeStep
   for (i = 0; i < timeStep; ++i) {
     // Grab necessary section of U
-    for (j = 0; j < numInputs; ++j) {
-      u[j] = Uin[ i*numInputs + j];
+    for (j = 0; j < M; ++j) {
+      u[j] = Uin[ i*M + j];
     }
 
     //printf("Timestep is %d\n",i);
@@ -88,23 +88,23 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
     // Perform calculations
     power((timeStep-1)-i, AT);
     //printArrayDouble(AT,n,n);
-    multiply(C,  numSensors, numStates, AT, numStates, numStates, CA);
+    multiply(C,  P, N, AT, N, N, CA);
     //printArrayDouble(CA,P,n);
-    multiply(B,  numStates, numInputs, u, numInputs, 1, Bu);
+    multiply(B,  N, M, u, M, 1, Bu);
     //printArrayDouble(Bu,n,1);
-    multiply(CA, numSensors, numStates, Bu, numStates, 1, CABu);
+    multiply(CA, P, N, Bu, N, 1, CABu);
     //printArrayDouble(CABu,P,1);
-    sub(tmpYBu, CABu, numSensors, tmpYBu2);
+    sub(tmpYBu, CABu, P, tmpYBu2);
     //printArrayDouble(tmpYBu,P,1);
     
-    for (j = 0; j < numSensors; ++j) {
+    for (j = 0; j < P; ++j) {
       tmpYBu[j] = tmpYBu2[j];
     }
   }
   
   // Copy tmpYBu into full YBu matrix
-  for (i = 0; i < numSensors; ++i) {
-    YBu[numSensors*timeStep+i] += tmpYBu[i];
+  for (i = 0; i < P; ++i) {
+    YBu[P*timeStep+i] += tmpYBu[i];
   }
 }
 
@@ -114,23 +114,23 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
  */
 void propagateDynamics(int timeStep, double* Uin, double* x) {
   // Initialize temporary variables
-  double u[numInputs];
-  double Ax[numStates];
-  double Bu[numStates];
+  double u[M];
+  double Ax[N];
+  double Bu[N];
   
   size_t t;
   size_t j;
-  // Loop through timesteps
+  // Loop through T
   for (t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
-    for (j = 0; j < numInputs; ++j) {
-      u[j] = Uin[numInputs*t + j];
+    for (j = 0; j < M; ++j) {
+      u[j] = Uin[M*t + j];
     }
 
     // Propagate system dynamics
-    multiply(A, numStates, numStates, x, numStates, 1, Ax);
-    multiply(B, numStates, numInputs, u, numInputs, 1, Bu);
-    add(Ax, Bu, numStates, x);
+    multiply(A, N, N, x, N, 1, Ax);
+    multiply(B, N, M, u, M, 1, Bu);
+    add(Ax, Bu, N, x);
   }
 }
 
@@ -140,18 +140,18 @@ void propagateDynamics(int timeStep, double* Uin, double* x) {
  */
 void power(int t, double* AT) {
   // Create temporary matrix
-  double tmpAT[numStates*numStates];
+  double tmpAT[N*N];
 
   size_t i;
   size_t j;
   // Fill the output AT matrix with zeros
-  for (i = 0; i < numStates*numStates; ++i) {
+  for (i = 0; i < N*N; ++i) {
     AT[i] = 0;
   }
   
   // Make AT the identity matrix
-  for (i = 0; i < numStates; ++i) {
-    AT[i*(numStates+1)] = 1;
+  for (i = 0; i < N; ++i) {
+    AT[i*(N+1)] = 1;
   }
   
   // If t is zero we want to return the identity without doing multiplication
@@ -161,9 +161,9 @@ void power(int t, double* AT) {
   else {
     // Loop through the number of powers desired
     for (i = 0; i < t; ++i) {
-      multiply(A, numStates, numStates, AT, numStates, numStates, tmpAT);
+      multiply(A, N, N, AT, N, N, tmpAT);
       // Copy tmpAT into AT
-      for (j = 0; j < numStates*numStates; ++j) {
+      for (j = 0; j < N*N; ++j) {
         AT[j] = tmpAT[j];
       }
     }

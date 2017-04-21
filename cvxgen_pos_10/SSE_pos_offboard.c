@@ -35,16 +35,17 @@ int main(int argc, char **argv) {
   readArrayFromFile(filenameC, C);
   
   // Create string to store y filename
-  const char* filenameY = "Ymatrix.txt";
-  const char* filenameU = "Umatrix.txt";
+  const char* filenameY = "posData.txt";
+  const char* filenameU = "uData.txt";
   char filenameX[6];
   char filenameInitX[13];
+  char filenameYBu[13];
   
   // START TIMING
   clock_t begin = clock();
   
   // *** CHANGE THIS TO A WHILE LOOP IN FINAL VERSION ***
-  const size_t TT = 20;
+  const size_t TT = 38;
   for (size_t ts = 0; ts < TT; ++ts) {
     printf("Current timestep is: %d\n", ts);
 
@@ -56,7 +57,7 @@ int main(int argc, char **argv) {
 
       // Read in sensor data from file
       readLines(filenameY, y, ts, P, 1);
-      //printArrayDouble(y,1,P);
+      printArrayDouble(y,1,P);
       
       // Update solver parameters CA and YBu
       load_CA(ts);
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
       for (size_t t = 0; t < T; ++t) {
         
         readLines(filenameY, y, tstart+t, P, 1);
-        //printArrayDouble(y,1,P);
+        printArrayDouble(y,1,P);
 
         // Create solver parameter YBu
         // (CA is already fully populated and does not change)
@@ -96,10 +97,15 @@ int main(int argc, char **argv) {
     }
     
     // Print solver parameters
-    printf("Full CA matrix is (non-zero entries by T):\n");
-    printArrayDouble(params.CA, nonZeroEntries, T);
+    //printf("Full CA matrix is (non-zero entries by T):\n");
+    //printArrayDouble(params.CA, nonZeroEntries, T);
+    printf("Motor inputs are:\n");
+    printArrayDouble(U, M, T);
     printf("Full YBu matrix is (P x T):\n");
     printArrayDouble(params.YBu, P, T);
+
+    sprintf(filenameYBu, "YBu%u.txt", ts);
+    writeFile(filenameYBu, YBu, P*T);
     
     // Solve optimization problem for initial state
     solve();
