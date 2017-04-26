@@ -9,8 +9,8 @@
 
 #include "CVX_inputs.h"
 #include "solver.h"
-#include <time.h>
 
+#include <time.h>
 #include "ros/ros.h"
 #include "beginner_tutorials/SensorData.h"
 #include "geometry_msgs/Point.h"
@@ -34,6 +34,8 @@ void load_CA(int timeStep);
 void load_YBu(int timeStep, double* yin, double* Uin);
 void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg);
 
+// Define C fucntions
+extern "C" void readArrayFromFile(const char* file_name, double* array);
 
 void sensorDataCallback(const beginner_tutorials::SensorData::ConstPtr& msg)
 {
@@ -89,17 +91,22 @@ int main(int argc, char **argv) {
   settings.verbose = 1;
 
   // Setup system matrices
-  const char* filenameA = "Amatrix.txt";
-  const char* filenameB = "Bmatrix.txt";
-  const char* filenameC = "Cmatrix.txt";
-  readArrayFromFile(filenameA, A);
-  readArrayFromFile(filenameB, B);
-  readArrayFromFile(filenameC, C);
+  // const char* filenameA = "Amatrix.txt";
+  // const char* filenameB = "Bmatrix.txt";
+  // const char* filenameC = "Cmatrix.txt";
+  // readArrayFromFile(filenameA, A);
+  // readArrayFromFile(filenameB, B);
+  // readArrayFromFile(filenameC, C);
   
-  // // Create string to store y filename
-  // const char* filenameY = "posData.txt";
-  // const char* filenameU = "uData.txt";
-  // char filenameX[6];
+  // printArrayDouble(A,numStates,numStates);
+  // printf("\n");
+  // printArrayDouble(B,numStates,numInputs);
+  // printf("\n");
+  // printf("%lf\n",B[0]);
+  // printf("\n");
+  // printArrayDouble(C,numSensors,numStates);
+  // printf("\n");
+  
 
   double x_prev[numStates];
   double x_pprev[numStates];
@@ -113,7 +120,7 @@ int main(int argc, char **argv) {
   size_t ts = 0;
 
   while(ros::ok){
-    printf("Current timestep is: %d\n", ts);
+    // ROS_INFO("In While Loop, %d",ts);
 
     if (newData) {
       // In this case we only need to update the YBu matrix, not recreate it
@@ -139,7 +146,7 @@ int main(int argc, char **argv) {
       
       // Here we need to recreate the entire YBu matrix
       else {
-        printf("Windowing load data\n");
+        ROS_INFO("Windowing load data\n");
         
         int tstart = ts-(timeSteps-1);
 
@@ -171,7 +178,7 @@ int main(int argc, char **argv) {
           load_YBu(t, y, U);
         }
 
-        printf("Full YBu matrix is (P x T):\n");
+        ROS_INFO("Full YBu matrix is (P x T):\n");
         printArrayDouble(params.YBu, numSensors, timeSteps);
       }
       
@@ -184,19 +191,19 @@ int main(int argc, char **argv) {
       // Solve optimization problem for initial state
       solve();
       
-      printf("\nOptimized x BEFORE dynamics propagation is:\n");
+      ROS_INFO("Optimized x BEFORE dynamics propagation is:");
       printArrayDouble(vars.x, numStates, 1);
 
       for (size_t i = 0; i < numStates; ++i) {
         x[i] = vars.x[i];
       }
       
-      if (ts < T) {
+      if (ts < timeSteps) {
         propagateDynamics(ts, U, x);
       }
       else {
         printf("Windowing propagate dynamics\n");
-        propagateDynamics(T-1, U, x);
+        propagateDynamics(timeSteps-1, U, x);
       }
       
       printf("Optimized x AFTER dynamics propagation is:\n");
@@ -206,7 +213,7 @@ int main(int argc, char **argv) {
       // sprintf(filenameX, "x%u.txt", ts);
       // writeFile(filenameX, x, numStates);
 
-      newdata = false;
+      newData = false;
     }
     else {
       // dt;
@@ -239,7 +246,7 @@ int main(int argc, char **argv) {
 
     // ROS publish message
     posStates.publish(position);
-    ros::spinOnces();
+    ros::spinOnce();
     loop_rate.sleep();
 
 

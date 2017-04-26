@@ -17,8 +17,6 @@
 #include "ang_sse/SensorData.h"
 #include "geometry_msgs/Quaternion.h"
 
-// C functions
-extern "C" void set_defaults(void);
 
 Vars vars;
 Params params;
@@ -117,152 +115,174 @@ int main(int argc, char **argv) {
 
 
 // CVX setup
-  // set_defaults();
-  // setup_indexing();
-  // settings.verbose = 1;
+  set_defaults();
+  setup_indexing();
+  settings.verbose = 1;
 
-  // // Setup system matrices
+  // Setup system matrices
   // const char* filenameA = "Amatrix.txt";
   // const char* filenameB = "Bmatrix.txt";
   // const char* filenameC = "Cmatrix.txt";
   // readArrayFromFile(filenameA, A);
   // readArrayFromFile(filenameB, B);
   // readArrayFromFile(filenameC, C);
+  
+  // printArrayDouble(A,numStates,numStates);
+  // printf("\n");
+  // printArrayDouble(B,numStates,numInputs);
+  // printf("\n");
+  // printf("%lf\n",B[0]);
+  // printf("\n");
+  // printArrayDouble(C,numSensors,numStates);
+  // printf("\n");
 
-
-  // double x_prev[numStates];
-  // double x_pprev[numStates];
+  double x_prev[numStates];
+  double x_pprev[numStates];
   
 
-  // // // Create string to store y filename
-  // // const char* filenameY = "Ymatrix.txt";
-  // // const char* filenameU = "Umatrix.txt";
-  // // char filenameX[6];
+  // // Create string to store y filename
+  // const char* filenameY = "Ymatrix.txt";
+  // const char* filenameU = "Umatrix.txt";
+  // char filenameX[6];
   
-  // // START TIMING
-  // // clock_t begin = clock();
+  // START TIMING
+  // clock_t begin = clock();
 
 
   while(ros::ok){ 
-  //   printf("Current timestep is: %d\n", ts);
+    // ROS_INFO("Ang_sse while loop %d",ts);
 
-  //   if (newData) {
-  //     // In this case we only need to update the YBu matrix, not recreate it
-  //     if (ts < timeSteps) {
-  //       // Read in matrix of most recent control inputs
-  //       // readLines(filenameU, U, 0, numInputs, timeSteps);
-  //       for(size_t i = 0; i < numInputs; ++i){
-  //         U[ts*numInputs + i] = u[i];
-  //       }
-  //       printArrayDouble(U,numInputs,timeSteps);
+    if (newData) {
+      // In this case we only need to update the YBu matrix, not recreate it
+      if (ts < timeSteps) {
+        // Read in matrix of most recent control inputs
+        // readLines(filenameU, U, 0, numInputs, timeSteps);
+        for(size_t i = 0; i < numInputs; ++i){
+          U[ts*numInputs + i] = u[i];
+        }
+        printArrayDouble(U,numInputs,timeSteps);
 
-  //       // Read in sensor data from file
-  //       // readLines(filenameY, y, ts, numSensors, 1);
-  //       for(size_t i = 0; i < numSensors; ++i){
-  //         y[i] = ang[i];
-  //       }
-  //       //printArrayDouble(y,1,numSensors);
+        // Read in sensor data from file
+        // readLines(filenameY, y, ts, numSensors, 1);
+        for(size_t i = 0; i < numSensors; ++i){
+          y[i] = ang[i];
+        }
+        //printArrayDouble(y,1,numSensors);
         
-  //       // Update solver parameters CA and YBu
-  //       load_CA(ts);
-  //       load_YBu(ts, y, U);
-  //     }
+        // Update solver parameters CA and YBu
+        load_CA(ts);
+        load_YBu(ts, y, U);
+      }
       
-  //     // Here we need to recreate the entire YBu matrix
-  //     else {
-  //       printf("Windowing load data\n");
+      // Here we need to recreate the entire YBu matrix
+      else {
+        printf("Windowing load data\n");
         
-  //       int tstart = ts-(timeSteps-1);
+        int tstart = ts-(timeSteps-1);
 
-  //       // clear old data in YBu
-  //       for (size_t t = 0; t < numSensors*timeSteps; ++t) {
-  //         YBu[t] = 0;
-  //       }
+        // clear old data in YBu
+        for (size_t t = 0; t < numSensors*timeSteps; ++t) {
+          YBu[t] = 0;
+        }
 
-  //       // Read in matrix of most recent control inputs
-  //       // readLines(filenameU, U, tstart, numInputs, numInputs);
-  //       for(size_t i = 0; i < numSensors; ++i){
-  //         y[i] = ang[i];
-  //       }
-  //       printArrayDouble(U,numInputs,timeSteps);
+        // Read in matrix of most recent control inputs
+        // readLines(filenameU, U, tstart, numInputs, numInputs);
+        for(size_t i = 0; i < numSensors; ++i){
+          y[i] = ang[i];
+        }
+        printArrayDouble(U,numInputs,timeSteps);
 
-  //       // Loop through T timesteps
-  //       for (size_t t = 0; t < timeSteps; ++t) {
+        // Loop through T timesteps
+        for (size_t t = 0; t < timeSteps; ++t) {
           
-  //         // readLines(filenameY, y, tstart+t, numSensors, 1);
-  //         for(size_t i = 0; i < numSensors; ++i){
-  //           y[i] = ang[i];
-  //         }
-  //         printArrayDouble(y,1,numSensors);
+          // readLines(filenameY, y, tstart+t, numSensors, 1);
+          for(size_t i = 0; i < numSensors; ++i){
+            y[i] = ang[i];
+          }
+          printArrayDouble(y,1,numSensors);
 
-  //         // Create solver parameter YBu
-  //         // (CA is already fully populated and does not change)
-  //         load_YBu(t, y, U);
-  //       }
+          // Create solver parameter YBu
+          // (CA is already fully populated and does not change)
+          load_YBu(t, y, U);
+        }
 
-  //       printf("Full YBu matrix is (numSensors x numInputs):\n");
-  //       printArrayDouble(params.YBu, numSensors, timeSteps);
-  //     }
+        printf("Full YBu matrix is (numSensors x numInputs):\n");
+        printArrayDouble(params.YBu, numSensors, timeSteps);
+      }
       
-  //     // numSensorsrint solver parameters
-  //     //printf("Full CA matrix is (non-zero entries by numInputs):\n");
-  //     //printArrayDouble(params.CA, nonZeroEntries, numInputs);
-  //     //printf("Full YBu matrix is (numSensors x numInputs):\n");
-  //     //printArrayDouble(params.YBu, numSensors, numInputs);
+      // numSensorsrint solver parameters
+      //printf("Full CA matrix is (non-zero entries by numInputs):\n");
+      //printArrayDouble(params.CA, nonZeroEntries, numInputs);
+      //printf("Full YBu matrix is (numSensors x numInputs):\n");
+      //printArrayDouble(params.YBu, numSensors, numInputs);
       
-  //     // Solve optimization problem for initial state
-  //     solve();
+      // Solve optimization problem for initial state
+      solve();
       
-  //     printf("\nOptimized x BEFORE dynamics propagation is:\n");
-  //     printArrayDouble(vars.x, numStates, 1);
+      printf("\nOptimized x BEFORE dynamics propagation is:\n");
+      printArrayDouble(vars.x, numStates, 1);
 
-  //     for (size_t i = 0; i < numStates; ++i) {
-  //       x[i] = vars.x[i];
-  //     }
+      for (size_t i = 0; i < numStates; ++i) {
+        x[i] = vars.x[i];
+      }
       
-  //     if (ts < timeSteps) {
-  //       propagateDynamics(ts, U, x);
-  //     }
-  //     else {
-  //       printf("Windowing propagate dynamics\n");
-  //       propagateDynamics(timeSteps-1, U, x);
-  //     }
+      if (ts < timeSteps) {
+        propagateDynamics(ts, U, x);
+      }
+      else {
+        printf("Windowing propagate dynamics\n");
+        propagateDynamics(timeSteps-1, U, x);
+      }
       
-  //     printf("Optimized x AFTER dynamics propagation is:\n");
-  //     printArrayDouble(x, numStates, 1);
+      printf("Optimized x AFTER dynamics propagation is:\n");
+      printArrayDouble(x, numStates, 1);
       
-  //     // // save output state x
-  //     // sprintf(filenameX, "x%u.txt", ts);
-  //     // writeFile(filenameX, x, numStates);
+      // // save output state x
+      // sprintf(filenameX, "x%u.txt", ts);
+      // writeFile(filenameX, x, numStates);
 
-  //     newData = false;
-  //   }
-  //   else {
-  //     // dt;
+      newData = false;
 
-  //     // Copy old state x into x_prev
-  //     for (size_t i = 0; i < numStates; ++i) {
-  //       x_prev[i] = x[i];
-  //     }
+      ROS_INFO("roll: %lf\t pitch: %lf\t yaw: %lf", x[0],x[1],x[2]);
 
-  //     // Approximate angular accelerations and calculate new orientation/
-  //     // angular velocities
-  //     int alphax = (x_prev[7] - x_pprev[7])/dt;
-  //     int alphay = (x_prev[8] - x_pprev[8])/dt;
-  //     int alphaz = (x_prev[9] - x_pprev[9])/dt;
-  //     x[4] = x_prev[4] + x_prev[7]*dt + 0.5*alphax*dt*dt;
-  //     x[5] = x_prev[5] + x_prev[8]*dt + 0.5*alphay*dt*dt;
-  //     x[6] = x_prev[6] + x_prev[9]*dt + 0.5*alphaz*dt*dt;
-  //     x[7] = x_prev[7] + alphax*dt;
-  //     x[8] = x_prev[8] + alphay*dt;
-  //     x[9] = x_prev[9] + alphaz*dt;
+    }
+    else {
+      // dt;
 
-  //     // Copy former x_prev into x_pprev
-  //     for (size_t i = 0; i < numStates; ++i) {
-  //       x_pprev[i] = x_prev[i];
-  //     }
+      // Copy old state x into x_prev
+      for (size_t i = 0; i < numStates; ++i) {
+        x_prev[i] = x[i];
+      }
 
-  //   }
+      // // Approximate angular accelerations and calculate new orientation/
+      // // angular velocities
+      // int alphax = (x_prev[7] - x_pprev[7])/dt;
+      // int alphay = (x_prev[8] - x_pprev[8])/dt;
+      // int alphaz = (x_prev[9] - x_pprev[9])/dt;
+      // x[4] = x_prev[4] + x_prev[7]*dt + 0.5*alphax*dt*dt;
+      // x[5] = x_prev[5] + x_prev[8]*dt + 0.5*alphay*dt*dt;
+      // x[6] = x_prev[6] + x_prev[9]*dt + 0.5*alphaz*dt*dt;
+      // x[7] = x_prev[7] + alphax*dt;
+      // x[8] = x_prev[8] + alphay*dt;
+      // x[9] = x_prev[9] + alphaz*dt;
+
+      double alphax = (x_prev[3] - x_pprev[3])/dt;
+      double alphay = (x_prev[4] - x_pprev[4])/dt;
+      double alphaz = (x_prev[5] - x_pprev[5])/dt;
+      x[0] = x_prev[0] + x_prev[3]*dt + 0.5*alphax*dt*dt;
+      x[1] = x_prev[1] + x_prev[4]*dt + 0.5*alphay*dt*dt;
+      x[2] = x_prev[2] + x_prev[5]*dt + 0.5*alphaz*dt*dt;
+      x[3] = x_prev[3] + alphax*dt;
+      x[4] = x_prev[4] + alphay*dt;
+      x[5] = x_prev[5] + alphaz*dt;
+
+      // Copy former x_prev into x_pprev
+      for (size_t i = 0; i < numStates; ++i) {
+        x_pprev[i] = x_prev[i];
+      }
+
+    }
+
 
     // Create the message
     angles = toQuaternions(x[0], x[1], x[2]);
@@ -280,7 +300,7 @@ int main(int argc, char **argv) {
     ts++;
   }
   
-  // // END TIMING
+  // END TIMING
   // clock_t end = clock();
   // double time_spent = (double) (end - begin) / CLOCKS_numSensorsER_SEC * 1000;
   // printf("Time to solve per timestep is is %.2f ms\n", time_spent/timeSteps);
@@ -300,21 +320,21 @@ int main(int argc, char **argv) {
 
 
 void load_CA(int timeStep) {
-  // // Set up CVX parameter matrix CA
-  // updateCA(timeStep);
-  // for (size_t i = 0; i < nonZeroEntries*timeSteps; ++i) {
-  //   params.CA[i] = CA[i];
-  // }
-  // //printArrayDouble(params.CA,nonZeroEntries,numInputs);
+  // Set up CVX parameter matrix CA
+  updateCA(timeStep);
+  for (size_t i = 0; i < nonZeroEntries*timeSteps; ++i) {
+    params.CA[i] = CA[i];
+  }
+  //printArrayDouble(params.CA,nonZeroEntries,numInputs);
 }
 
 void load_YBu(int timeStep, double* yin, double* Uin) {
-  // // Set up CVX parameter vector YBu
-  // updateYBu(timeStep, yin, Uin);
-  // for (size_t i = 0; i < numSensors*timeSteps; ++i) {
-  //   params.YBu[i] = YBu[i];
-  // }
-  // //printArrayDouble(params.YBu,numSensors,numInputs);
+  // Set up CVX parameter vector YBu
+  updateYBu(timeStep, yin, Uin);
+  for (size_t i = 0; i < numSensors*timeSteps; ++i) {
+    params.YBu[i] = YBu[i];
+  }
+  //printArrayDouble(params.YBu,numSensors,numInputs);
 }
 
 /**

@@ -11,26 +11,26 @@
 #define INPUTS_H_INCLUDED 1
 
 // Define constants
-#define numStates 4 // N = states
-#define numSensors 14 // P = sensors
-#define timeSteps 10 // T = timesteps
-#define numInputs 5 // M = inputs
+#define N 4 // N = states
+#define P 14 // P = sensors
+#define T 10 // T = T
+#define M 5 // M = inputs
 
 // Define sparsity
 #define nonZeroEntries 16
 
 // Constant Matrices
-double A[numStates*numStates]; // nxn
-double B[numStates*numInputs]; // nxm
-double C[numSensors*numStates]; // Pxn
+double A[N*N]; // = {1,0,0,0,0,0.95123,0,0,0,0,0.95123,0,0.097541,0,0,0.95123}; // nxn
+double B[N*M]; // = {2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,2.9506e-08,0,0,5.8525e-07,-0.0049177,0,0,-0.097541};  // nxm
+double C[P*N]; // = {1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1}; // Pxn
 
 // Update contents after each timeStep
-double CA[numSensors*timeSteps*numStates]; // PTxn
-double YBu[numSensors*timeSteps];  // PTx1
-double U[numInputs*timeSteps];    // MxT
-double Y[numSensors*timeSteps];
-double y[numSensors];
-double x[numStates]; // state vector
+double CA[P*T*N]; // PTxn
+double YBu[P*T];  // PTx1
+double U[M*T];    // MxT
+double Y[P*T];
+double y[P];
+double x[N]; // state vector
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
