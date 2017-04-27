@@ -1,6 +1,6 @@
 // Inputs to quadrotor CVX optimization solver 
 
-#include "CVX_inputs.h"
+#include "CVX_inputs_ang.h"
 #include <stdio.h>
 
 ////////////////////////////
@@ -8,8 +8,8 @@
 ////////////////////////////
 
 // CVXgen sparse indicies
-static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1, 2};
-static int colInd[nonZeroEntries] = {1, 1, 2, 3, 4, 2, 3, 4, 2,  3,  4,  2,  3,  4, 4, 4};
+static int rowInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21};
+static int colInd[nonZeroEntries] = {1, 2, 3, 4, 5, 6, 1, 2, 3,  4,  5,  6,  1,  2,  3,  4,  5,  6,  1,  2,  3,  4,  5,  6, 4, 5, 6, 4, 5, 6,  4,  5,  6,  4,  5,  6};
 
 /* 
  * Creates a PT x n matrix based on matrices A and C of quadrotor model
@@ -36,9 +36,7 @@ void updateCA(int timeStep) {
     }
   }
   */
-  int r = 0;
-  int c = 0;
-  int i = 0;
+  int i, r, c;
   for (i = 0; i < nonZeroEntries; ++i) {
     r = rowInd[i]-1; // Matlab/CVXgen indexes from 1
     c = colInd[i]-1;
@@ -67,8 +65,7 @@ void updateYBu(int timeStep, double* yin, double* Uin) {
   double tmpYBu[numSensors];
   double tmpYBu2[numSensors];
 
-  size_t i;
-  size_t j;
+  size_t i, j;
   // put sensor outputs into output matrix
   for (i = 0; i < numSensors; ++i) {
     tmpYBu[i] = yin[i];
@@ -118,8 +115,7 @@ void propagateDynamics(int timeStep, double* Uin, double* x) {
   double Ax[numStates];
   double Bu[numStates];
   
-  size_t t;
-  size_t j;
+  size_t t, j;
   // Loop through timesteps
   for (t = 0; t < timeStep; ++t) {
     // Grab necessary inputs
@@ -141,9 +137,8 @@ void propagateDynamics(int timeStep, double* Uin, double* x) {
 void power(int t, double* AT) {
   // Create temporary matrix
   double tmpAT[numStates*numStates];
-
-  size_t i;
-  size_t j;
+  
+  size_t i, j;
   // Fill the output AT matrix with zeros
   for (i = 0; i < numStates*numStates; ++i) {
     AT[i] = 0;

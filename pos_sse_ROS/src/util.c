@@ -6,7 +6,7 @@
 
 /* Filename: util.c. */
 /* Description: Common utility file for all cvxgen code. */
-#include "solver.h"
+#include "solver_pos.h"
 #include <time.h>
 #include <stdlib.h>
 #include <math.h>

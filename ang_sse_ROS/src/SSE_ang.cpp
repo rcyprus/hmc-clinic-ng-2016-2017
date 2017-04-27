@@ -8,8 +8,8 @@
 /* Description: Basic test harness for solver.c. */
 
 
-#include "CVX_inputs.h"
-#include "solver.h"
+#include "CVX_inputs_ang.h"
+#include "solver_ang.h"
 
 #include <time.h>
 #include "ros/ros.h"
@@ -96,6 +96,8 @@ void sensorDataCallback(const ang_sse::SensorData::ConstPtr& msg)
 
 
 int main(int argc, char **argv) {
+
+  printf("NumSensors: %d\n", numSensors);
 // Setup ROS stuff
   ROS_INFO("Starting Ang SSE");
   ros::init(argc,argv,"AngSSE");
@@ -129,6 +131,7 @@ int main(int argc, char **argv) {
   
   char filenameX[20];
   char filenameYBu[20];
+  char filenamey[20];
 
 
   // printArrayDouble(A,numStates,numStates);
@@ -238,6 +241,10 @@ int main(int argc, char **argv) {
         sprintf(filenameYBu, "YBu%u.txt", ts);
         writeFile(filenameYBu, YBu, numSensors*timeSteps);
       }
+      // if(writeData){
+      //   sprintf(filenamey, "y%u.txt", ts);
+      //   writeFile(filenamey, y, numSensors);
+      // }
       // Solve optimization problem for initial state
       solve();
       

@@ -15,17 +15,17 @@ CC = gcc
 .PHONY: all
 all: SSE_ang 
 #testsolver: solver.o matrix_support.o ldl.o testsolver.o util.o CVX_inputs.o matrix-helper.o
-SSE_ang: solver.o matrix_support.o ldl.o SSE_ang.o util.o CVX_inputs.o matrix-helper.o
+SSE_ang: solver_ang.o matrix_support.o ldl.o SSE_ang.o util.o CVX_inputs_ang.o matrix-helper.o
 # Include util.o for random functions and easy matrix printing.
 #testsolver: solver.o matrix_support.o ldl.o util.o testsolver.o
-CVX_inputs.o: CVX_inputs.c CVX_inputs.h
+CVX_inputs_ang.o: CVX_inputs_ang.c CVX_inputs_ang.h
 matrix-helper.o: matrix-helper.c matrix-helper.h
-solver.o: solver.h
-matrix_support.o: solver.h
-ldl.o: solver.h
-util.o: solver.h
+solver_ang.o: solver_ang.h
+matrix_support.o: solver_ang.h
+ldl.o: solver_ang.h
+util.o: solver_ang.h
 #testsolver.o: solver.h CVX_inputs.h matrix-helper.h
-SSE_ang.o: solver.h CVX_inputs.h matrix-helper.h
-.PHONY : clean
+SSE_ang.o: solver_ang.h CVX_inputs_ang.h matrix-helper.h
+.PHONY : cleans
 clean :
 	del *.o testsolver

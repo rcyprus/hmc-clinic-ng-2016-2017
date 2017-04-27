@@ -69,6 +69,7 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
    DEPENDENCIES
+   geometry_msgs 
    std_msgs
 )
 
@@ -125,18 +126,18 @@ include_directories(
 
 ## Declare a C++ library
 add_library(
-  CVX_inputs src/CVX_inputs.c
+  CVX_inputs_ang src/CVX_inputs_ang.c
 )
 add_library(
   matrix-helper src/matrix-helper.c
 )
 add_library(
-  solver src/solver.c src/ldl.c src/matrix_support.c src/util.c
+  solver_ang src/solver_ang.c src/ldl.c src/matrix_support.c src/util.c
 )
 
 add_executable(sse_ang src/SSE_ang.cpp)
 add_dependencies(sse_ang ang_sse_generate_messages_cpp)
-target_link_libraries(sse_ang CVX_inputs matrix-helper solver ${catkin_LIBRARIES})
+target_link_libraries(sse_ang CVX_inputs_ang matrix-helper solver_ang ${catkin_LIBRARIES})
 #target_link_libraries(sse_ang CVX_inputs.o)
 
 

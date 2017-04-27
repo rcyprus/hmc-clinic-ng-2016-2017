@@ -6,7 +6,7 @@
 
 /* Filename: ldl.c. */
 /* Description: Basic test harness for solver.c. */
-#include "solver.h"
+#include "solver_pos.h"
 /* Be sure to place ldl_solve first, so storage schemes are defined by it. */
 void ldl_solve(double *target, double *var) {
   int i;

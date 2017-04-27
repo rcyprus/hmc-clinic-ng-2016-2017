@@ -7,8 +7,8 @@
 /* Filename: testsolver.c. */
 /* Description: Basic test harness for solver.c. */
 
-#include "CVX_inputs.h"
-#include "solver.h"
+#include "CVX_inputs_pos.h"
+#include "solver_pos.h"
 
 #include <time.h>
 #include "ros/ros.h"
@@ -80,6 +80,8 @@ void pixXYCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 }
 
 int main(int argc, char **argv) {
+
+  printf("NumSensors: %d\n", numSensors);
   // Setup ROS stuff
   ROS_INFO("Starting Pos SSE");
   ros::init(argc,argv,"PosSSE");
@@ -252,7 +254,7 @@ int main(int argc, char **argv) {
         propagateDynamics(ts, U, x);
       }
       else {
-        printf("Windowing propagate dynamics\n");
+        // printf("Windowing propagate dynamics\n");
         propagateDynamics(timeSteps-1, U, x);
       }
       

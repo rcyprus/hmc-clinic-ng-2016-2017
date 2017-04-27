@@ -129,19 +129,19 @@ include_directories(
 
 ## Declare a C++ library
 add_library(
-  CVX_inputs src/CVX_inputs.c
+  CVX_inputs_pos src/CVX_inputs_pos.c
 )
 add_library(
   matrix-helper src/matrix-helper.c
 )
 add_library(
-  solver src/solver.c src/ldl.c src/matrix_support.c src/util.c
+  solver_pos src/solver_pos.c src/ldl.c src/matrix_support.c src/util.c
 )
 
 add_executable(sse_pos src/SSE_pos.cpp)
 add_dependencies(sse_pos pos_sse_generate_messages_cpp)
 # target_link_libraries(sse_pos ${catkin_LIBRARIES})
-target_link_libraries(sse_pos CVX_inputs matrix-helper solver ${catkin_LIBRARIES})
+target_link_libraries(sse_pos CVX_inputs_pos matrix-helper solver_pos ${catkin_LIBRARIES})
 
 
 

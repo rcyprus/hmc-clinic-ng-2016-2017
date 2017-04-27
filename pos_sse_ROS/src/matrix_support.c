@@ -6,7 +6,7 @@
 
 /* Filename: matrix_support.c. */
 /* Description: Support functions for matrix multiplication and vector filling. */
-#include "solver.h"
+#include "solver_pos.h"
 void multbymA(double *lhs, double *rhs) {
 }
 void multbymAT(double *lhs, double *rhs) {
