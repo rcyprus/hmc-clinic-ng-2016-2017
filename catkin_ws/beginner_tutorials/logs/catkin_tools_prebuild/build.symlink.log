@@ -1,0 +1,8 @@
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/./_setup_util.py
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/./setup.bash
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/./setup.sh
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/./setup.zsh
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/./env.sh
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake
+Symlinking /home/ubuntu/catkin_ws/src/beginner_tutorials/devel/lib/pkgconfig/catkin_tools_prebuild.pc

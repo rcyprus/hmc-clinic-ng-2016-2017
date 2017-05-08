@@ -1,0 +1,6 @@
+devel_space: /home/ubuntu/catkin_ws/src/beginner_tutorials/devel
+install: false
+install_space: /home/ubuntu/catkin_ws/src/beginner_tutorials/install
+profile: default
+source_space: /home/ubuntu/catkin_ws/src/beginner_tutorials/src
+workspace: /home/ubuntu/catkin_ws/src/beginner_tutorials
